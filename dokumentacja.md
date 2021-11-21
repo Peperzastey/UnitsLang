@@ -130,7 +130,7 @@ id                                      = ( litera | '_' ), { litera | cyfra | '
 
 koniec_linii                            = '\n' | '\r\n' ;
 
-koniec_instrukcji                       = ? koniec_linii niepoprzedzony sekwencją ( '\', { whitespace } ) ?
+koniec_instrukcji                       = ? koniec_linii niepoprzedzony sekwencją ( '\', { whitespace } ) ? ;
                                         (* \ na końcu linii umożliwia kontynuację instrukcji w następnej linii *)
 
 cyfra                                   = ? regex [0-9] ? ;
@@ -142,8 +142,9 @@ litera                                  = ? regex [a-zA-Z] ? ;
 separator_grupy_cyfr                    = ' ' ;
                                         (* spacja *)
 
-liczba                                  = cyfra, [ '.', { cyfra } ]
-                                        | cyfra_niezerowa, 2 * [ cyfra ], { separator_grupy_cyfr, 3 * cyfra }, [ '.', { cyfra } ] ;
+liczba                                  = cyfra, [ '.', cyfra, { cyfra } ]
+                                        | cyfra_niezerowa, { cyfra }, [ '.', cyfra, { cyfra } ]
+                                        | cyfra_niezerowa, 2 * [ cyfra ], { separator_grupy_cyfr, 3 * cyfra }, [ '.', cyfra, { cyfra } ] ;
 
 jednostka_podstawowa                    = 's' | 'min' | 'h' | 'Hz' | 'g' | 'm' | 'N' | 'Pa' | 'J' ;
 
@@ -164,6 +165,8 @@ escapowany_cudzysłów                    = '\"' ;
 wartość_logiczna                        = 'true' | 'false' ;
 
 skalar                                  = '1' ;
+
+komentarz                               = ? linia zaczynająca się sekwencją '//' ? ;
 ```
 
 Symbole rozpoznawane przez parser:
@@ -174,11 +177,9 @@ kod                                     = {
                                         | komentarz 
                                         } ;
 
-komentarz                               = '//', tekst, koniec_linii ;
-
 tekst                                   = { znak } ;
 
-instrukcja                              = (
+instrukcja                              = [
                                           definicja_zmiennej
                                         | przypisanie
                                         | definicja_funkcji
@@ -189,7 +190,7 @@ instrukcja                              = (
                                         | instrukcja_if
                                         | 'break'
                                         | 'continue'
-                                        ), koniec_instrukcji ;
+                                        ], koniec_instrukcji ;
 
 definicja_zmiennej                      = id, [ oznaczenie_typu ], '=', wyrażenie ;
 
@@ -275,6 +276,7 @@ else
 false
 func
 if
+in
 print    //funkcja wbudowana
 return
 true
@@ -298,3 +300,9 @@ Interpreter będzie przyjmował jako wejście strumień znaków (kod źródłowy
 Wyjściem procesu interpretera będzie:
 * exit status - liczba całkowita podana w instrukcji `return` w scopie globalnym podanego kodu źródłowego (poza ciałami funkcji), lub 0 jeśli taka instrukcja `return` jest nieobecna w wejściu
 * stdout - ciągi znakowe będące wynikiem wołania funkcji `print` w podanym kodzie źródłowym
+
+### Kwestie bezpieczeństwa:
+
+* Limit długości identyfikatorów: 250 znaków
+* Limit długości stałych tekstowych: 250 znaków
+* Limit długości liczb: 250 znaków
