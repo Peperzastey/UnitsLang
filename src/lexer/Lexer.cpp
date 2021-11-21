@@ -6,8 +6,17 @@
 #include <iostream> //TODO debugging
 
 std::unordered_map<std::string, TokenType> Lexer::keywords_ {
-    { "while"  , TokenType::KEYWORD_WHILE },
-    { "if"     , TokenType::KEYWORD_IF    }
+    { "bool"     , TokenType::KEYWORD_BOOL     },
+    { "break"    , TokenType::KEYWORD_BREAK    },
+    { "continue" , TokenType::KEYWORD_CONTINUE },
+    { "else"     , TokenType::KEYWORD_ELSE     },
+    { "false"    , TokenType::KEYWORD_FALSE    },
+    { "func"     , TokenType::KEYWORD_FUNC     },
+    { "if"       , TokenType::KEYWORD_IF       },
+    { "in"       , TokenType::KEYWORD_IN       },
+    { "return"   , TokenType::KEYWORD_RETURN   },
+    { "true"     , TokenType::KEYWORD_TRUE     },
+    { "while"    , TokenType::KEYWORD_WHILE    }
 };
 
 char Lexer::discardWhitespacesAndComments() {
@@ -29,33 +38,30 @@ char Lexer::discardWhitespacesAndComments() {
 }
 
 bool Lexer::discardComment() {
-    /*if (c != '/') {
-        return false;
-    }*/
     char c = source_.getChar();
     if (c != '/') {
         source_.ungetChar(c);
         return false;
     }
     // comment
-    while (c != '\r' && c != '\n') {
+    while (!consumeNewline(c)) {
         c = source_.getChar();
-    }
-    if (c == '\r') {
-        c = source_.getChar();
-    }
-    if (c != '\n') {
-        throw std::runtime_error("Lexer error: '\\r' not followed by '\\n'!");
     }
     return true;
 }
 
 void Lexer::discardInstrBreak() {
     char c;
-    bool gotR = false;
     do {
         c = source_.getChar();
     } while (isblank(c));
+    if (!consumeNewline(c)) {
+        throw std::runtime_error("Lexer error: Instruction break ('\\') followed by non-space character!");
+    }
+}
+
+bool Lexer::consumeNewline(char c) {
+    bool gotR = false;
     if (c == '\r') {
         gotR = true;
         c = source_.getChar();
@@ -64,8 +70,9 @@ void Lexer::discardInstrBreak() {
         if (gotR) {
             throw std::runtime_error("Lexer error: '\\r' not followed by '\\n'!");
         }
-        throw std::runtime_error("Lexer error: Instruction break ('\\') followed by non-space character!");
+        return false;
     }
+    return true;
 }
 
 Token Lexer::getToken() {
@@ -89,7 +96,30 @@ Token Lexer::getToken() {
             return { TokenType::OP_MULT, std::string{c} };
         case '+':
         case '-':
-            return constructAdditiveOp(c);
+            return constructAdditiveOpOrFuncResult(c);
+        case '=':
+            return constructAssignOrEq(c);
+        case '>':
+        case '<':
+            return constructRelationalOp(c);
+        case '!':
+            return constructNotEq(c);
+        case '"':
+            return constructString(c);
+        case '(':
+            return { TokenType::PAREN_OPEN, "" };
+        case ')':
+            return { TokenType::PAREN_CLOSE, "" };
+        case '{':
+            return { TokenType::BRACKET_OPEN, "" };
+        case '}':
+            return { TokenType::BRACKET_CLOSE, "" };
+        case '[':
+            return { TokenType::SQUARE_OPEN, "" };
+        case ']':
+            return { TokenType::SQUARE_CLOSE, "" };
+        case ',':
+            return { TokenType::COMMA, "" };
         case EOF:
             return { TokenType::END_OF_STREAM, "" };
         default:
@@ -99,32 +129,92 @@ Token Lexer::getToken() {
 }
 
 Token Lexer::constructEndOfInstr(char c) {
-    if (c == '\r') {
-        c = source_.getChar();
-        if (c != '\n') {
-            throw std::runtime_error("Lexer error: '\\r' not followed by '\\n'!");
-        }
-    }
-    assert(c == '\n');
+    bool newlineConstructed = consumeNewline(c);
+    assert(newlineConstructed);
     return { TokenType::END_OF_INSTRUCTION, "" };
 }
 
-Token Lexer::constructAdditiveOp(char c) {
+Token Lexer::constructAdditiveOpOrFuncResult(char c) {
     char nextCh = source_.getChar();
     if (nextCh == c) {
         //TODO? check if next char is blank
         return { TokenType::OP_SUFFIX, std::string{c, nextCh} };
+    } else if (c == '-' && nextCh == '>') {
+        return { TokenType::FUNC_RESULT, "" };
     }
     source_.ungetChar(nextCh);
     return { TokenType::OP_ADD, std::string{c} };
 }
 
-Token Lexer::constructIdOrUnitOrKeyword(char c) {
+Token Lexer::constructAssignOrEq([[maybe_unused]] char c) {
+    assert(c == '=');
+    char nextCh = source_.getChar();
+    if (nextCh == '=') {
+        return { TokenType::OP_REL, "==" };
+    }
+    source_.ungetChar(nextCh);
+    return { TokenType::ASSIGN, "" };
+}
+
+Token Lexer::constructRelationalOp(char c) {
+    char nextCh = source_.getChar();
+    if (nextCh == '=') {
+        return { TokenType::OP_REL, std::string{c, nextCh} };
+    }
+    source_.ungetChar(nextCh);
+    return { TokenType::OP_REL, std::string{c} };
+}
+
+Token Lexer::constructNotEq(char c) {
+    c = source_.getChar();
+    if (c != '=') {
+        throw std::runtime_error("Lexer error: '!' not followed by '='!");
+    }
+    return { TokenType::OP_REL, "!=" };
+}
+
+Token Lexer::constructString(char c) {
+    assert(c == '"');
+    bool escaping = false;
+    std::ostringstream buffer;
+    buffer << c;
+    uint length = 1;
+
+    while (true) {
+        c = source_.getChar();
+
+        if (consumeNewline(c)) {
+            throw std::runtime_error("Lexer error: closing '\"' not found in string before encountering newline!");
+        }
+
+        assertStringLength(++length);
+        buffer << c;
+
+        switch (c) {
+            case '\\':
+                escaping = true;
+                break;
+            case '"':
+                if (!escaping) {
+                    return { TokenType::STRING, buffer.str() };
+                }
+                [[fallthrough]];
+            default:
+                escaping = false;
+            //TODO case '{' //formatting
+        }
+    }
+}
+
+Token Lexer::constructIdOrUnitOrKeyword(char c) {  
     std::stringstream buffer;
     buffer << c;
+    uint length = 1;
+
     c = source_.getChar();
     while (isalpha(c) || c == '_' || isdigit(c)) {
         buffer << c;
+        assertIdLength(++length);
         c = source_.getChar();
     }
     source_.ungetChar(c);
@@ -137,17 +227,15 @@ Token Lexer::constructIdOrUnitOrKeyword(char c) {
 }
 
 Token Lexer::constructNumber(char c) {
-    //std::stringstream buffer;
-    //buffer << c;
     int digitInBlockCounter = 1;
     int separatorCounter = 0;
-    //int dotCounter = 0;
     int value = c - '0';
+    uint length = 1;
 
     while (true) {
         char prevCh = c;
         c = source_.getChar();
-        //buffer << c;
+        assertIntNumberLength(++length);
 
         if (isdigit(c)) {
             if (value == 0) { // first digit is 0 and is not followed by dot
@@ -172,19 +260,16 @@ Token Lexer::constructNumber(char c) {
                 break;
 
             case '.': {
-                //++dotCounter;
                 if (!isdigit(prevCh)) {
                     throw std::runtime_error("Lexer error: Dot not following a digit in number!");
                 }
-                /*if (dotCounter > 1) {
-                    throw std::runtime_error("Lexer error: More than one dot in number!");
-                }*/
-                auto [intValue, length] = parseIntFromSource();
-                if (length == 0) {
+
+                auto [intValue, intLength] = parseIntFromSource();
+                if (intLength == 0) {
                     throw std::runtime_error("Lexer error: Fraction part is empty in number!");
                 }
                 int divisor = 1;
-                for (; length > 0; --length) {
+                for (; intLength > 0; --intLength) {
                     divisor *= 10;
                 }
                 double fraction = static_cast<double>(intValue) / divisor;
@@ -212,7 +297,39 @@ Lexer::IntWithLength Lexer::parseIntFromSource() {
             source_.ungetChar(c);
             return { value, length };
         }
-        ++length;
+        assertPostDotNumberLength(++length);
         value = value * 10 + c - '0';
+    }
+}
+
+void Lexer::assertIdLength(uint length) const {
+    if (length > MAX_ID_LENGTH) {
+        std::ostringstream msg;
+        msg << "Lexer error: Id too long! Max: " << MAX_ID_LENGTH << "chars";
+        throw std::runtime_error(msg.str());
+    }
+}
+
+void Lexer::assertIntNumberLength(uint length) const {
+    if (length > MAX_INT_NUMBER_LENGTH) {
+        std::ostringstream msg;
+        msg << "Lexer error: Number too long! Max: " << MAX_INT_NUMBER_LENGTH << "chars";
+        throw std::runtime_error(msg.str());
+    }
+}
+
+void Lexer::assertPostDotNumberLength(uint length) const {
+    if (length > MAX_POST_DOT_NUMBER_LENGTH) {
+        std::ostringstream msg;
+        msg << "Lexer error: Fraction number too long! Max: " << MAX_POST_DOT_NUMBER_LENGTH << "chars";
+        throw std::runtime_error(msg.str());
+    }
+}
+
+void Lexer::assertStringLength(uint length) const {
+    if (length > MAX_STRING_LITERAL_LENGTH) {
+        std::ostringstream msg;
+        msg << "Lexer error: String literal too long! Max: " << MAX_STRING_LITERAL_LENGTH << "chars";
+        throw std::runtime_error(msg.str());
     }
 }
