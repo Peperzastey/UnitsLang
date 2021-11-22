@@ -3,7 +3,6 @@
 #include <cctype>
 #include <stdexcept>
 #include <sstream>
-#include <iostream> //TODO debugging
 
 std::unordered_map<std::string, TokenType> Lexer::keywords_ {
     { "bool"     , TokenType::KEYWORD_BOOL     },
@@ -43,7 +42,7 @@ bool Lexer::discardComment() {
         source_.ungetChar(c);
         return false;
     }
-    // comment
+    // it is a comment
     while (!consumeNewline(c)) {
         c = source_.getChar();
     }
@@ -78,11 +77,10 @@ bool Lexer::consumeNewline(char c) {
 Token Lexer::getToken() {
     char c = discardWhitespacesAndComments();
     
-    // id/unit/keyword:
     if (isalpha(c) || c == '_') {
         return constructIdOrUnitOrKeyword(c);
     }
-    // number:
+
     if (isdigit(c)) {
         return constructNumber(c);
     }
@@ -123,7 +121,6 @@ Token Lexer::getToken() {
         case EOF:
             return { TokenType::END_OF_STREAM, "" };
         default:
-            // string contents? (text)
             throw std::runtime_error("Lexer error: Unknown lexem");
     }
 }
@@ -137,7 +134,6 @@ Token Lexer::constructEndOfInstr(char c) {
 Token Lexer::constructAdditiveOpOrFuncResult(char c) {
     char nextCh = source_.getChar();
     if (nextCh == c) {
-        //TODO? check if next char is blank
         return { TokenType::OP_SUFFIX, std::string{c, nextCh} };
     } else if (c == '-' && nextCh == '>') {
         return { TokenType::FUNC_RESULT, "" };
@@ -178,7 +174,7 @@ Token Lexer::constructString(char c) {
     bool escaping = false;
     std::ostringstream buffer;
     buffer << c;
-    uint length = 1;
+    unsigned int length = 1;
 
     while (true) {
         c = source_.getChar();
@@ -201,7 +197,6 @@ Token Lexer::constructString(char c) {
                 [[fallthrough]];
             default:
                 escaping = false;
-            //TODO case '{' //formatting
         }
     }
 }
@@ -209,7 +204,7 @@ Token Lexer::constructString(char c) {
 Token Lexer::constructIdOrUnitOrKeyword(char c) {  
     std::stringstream buffer;
     buffer << c;
-    uint length = 1;
+    unsigned int length = 1;
 
     c = source_.getChar();
     while (isalpha(c) || c == '_' || isdigit(c)) {
@@ -219,7 +214,8 @@ Token Lexer::constructIdOrUnitOrKeyword(char c) {
     }
     source_.ungetChar(c);
     std::string value = buffer.str();
-    // check which is it
+
+    // check if it is a keyword
     if (auto it = keywords_.find(value); it != keywords_.end()) {
         return { it->second, value };
     }
@@ -230,7 +226,7 @@ Token Lexer::constructNumber(char c) {
     int digitInBlockCounter = 1;
     int separatorCounter = 0;
     int value = c - '0';
-    uint length = 1;
+    unsigned int length = 1;
 
     while (true) {
         char prevCh = c;
@@ -251,7 +247,6 @@ Token Lexer::constructNumber(char c) {
                 ++separatorCounter;
                 if (!isdigit(prevCh)) {
                     throw std::runtime_error("Lexer error: Digit block separator not following a digit in number!");
-                    //TODO error handling: numer linii, pozycja w tekście
                 }
                 if (digitInBlockCounter > 3) {
                     throw std::runtime_error("Lexer error: Digit block in number longer than 3 digits!");
@@ -302,7 +297,7 @@ Lexer::IntWithLength Lexer::parseIntFromSource() {
     }
 }
 
-void Lexer::assertIdLength(uint length) const {
+void Lexer::assertIdLength(unsigned int length) const {
     if (length > MAX_ID_LENGTH) {
         std::ostringstream msg;
         msg << "Lexer error: Id too long! Max: " << MAX_ID_LENGTH << "chars";
@@ -310,7 +305,7 @@ void Lexer::assertIdLength(uint length) const {
     }
 }
 
-void Lexer::assertIntNumberLength(uint length) const {
+void Lexer::assertIntNumberLength(unsigned int length) const {
     if (length > MAX_INT_NUMBER_LENGTH) {
         std::ostringstream msg;
         msg << "Lexer error: Number too long! Max: " << MAX_INT_NUMBER_LENGTH << "chars";
@@ -318,7 +313,7 @@ void Lexer::assertIntNumberLength(uint length) const {
     }
 }
 
-void Lexer::assertPostDotNumberLength(uint length) const {
+void Lexer::assertPostDotNumberLength(unsigned int length) const {
     if (length > MAX_POST_DOT_NUMBER_LENGTH) {
         std::ostringstream msg;
         msg << "Lexer error: Fraction number too long! Max: " << MAX_POST_DOT_NUMBER_LENGTH << "chars";
@@ -326,7 +321,7 @@ void Lexer::assertPostDotNumberLength(uint length) const {
     }
 }
 
-void Lexer::assertStringLength(uint length) const {
+void Lexer::assertStringLength(unsigned int length) const {
     if (length > MAX_STRING_LITERAL_LENGTH) {
         std::ostringstream msg;
         msg << "Lexer error: String literal too long! Max: " << MAX_STRING_LITERAL_LENGTH << "chars";

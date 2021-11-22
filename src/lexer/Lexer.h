@@ -17,7 +17,6 @@ enum class TokenType {
     KEYWORD_FUNC,
     KEYWORD_IF,
     KEYWORD_IN,
-    //KEYWORD_PRINT,  //TODO???
     KEYWORD_RETURN,
     KEYWORD_TRUE,
     KEYWORD_WHILE,
@@ -37,20 +36,19 @@ enum class TokenType {
     STRING,
     END_OF_INSTRUCTION,
     END_OF_STREAM
-    //, ...
 };
 
 struct Token {
     TokenType type;
-    std::variant<std::string, int, double> value; //TODO only double?
+    std::variant<std::string, int, double> value;
 };
 
 class Lexer {
 public:
-    const uint MAX_ID_LENGTH = 250;
-    const uint MAX_INT_NUMBER_LENGTH = 12;
-    const uint MAX_POST_DOT_NUMBER_LENGTH = 12;
-    const uint MAX_STRING_LITERAL_LENGTH = 250;
+    const unsigned int MAX_ID_LENGTH = 250;
+    const unsigned int MAX_INT_NUMBER_LENGTH = 12;
+    const unsigned int MAX_POST_DOT_NUMBER_LENGTH = 12;
+    const unsigned int MAX_STRING_LITERAL_LENGTH = 250;
 
 public:
     explicit Lexer(Source &source) : source_(source) {}
@@ -69,7 +67,7 @@ private:
     Token constructAssignOrEq(char c);
     Token constructRelationalOp(char c);
     Token constructNotEq(char c);
-    Token constructString(char c); //TODO parse inner lexemes
+    Token constructString(char c);
 
     struct IntWithLength {
         int value;
@@ -77,10 +75,10 @@ private:
     };
     IntWithLength parseIntFromSource();
 
-    void assertIdLength(uint length) const;
-    void assertIntNumberLength(uint length) const;
-    void assertPostDotNumberLength(uint length) const;
-    void assertStringLength(uint length) const;
+    void assertIdLength(unsigned int length) const;
+    void assertIntNumberLength(unsigned int length) const;
+    void assertPostDotNumberLength(unsigned int length) const;
+    void assertStringLength(unsigned int length) const;
 
 private:
     Source &source_;

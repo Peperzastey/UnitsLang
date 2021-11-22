@@ -3,11 +3,16 @@
 
 #include <stack>
 
-//TODO private ctor and factory! -- user cannot use any concrete Source class not using this base class as handler
+struct PosInStream {
+    unsigned int lineNumber;
+    unsigned int posInLine;
+};
+
 class Source {
 public:
     char getChar();
     void ungetChar(char c);
+    PosInStream getCurrentPosition() const;
 
     virtual ~Source();
 
@@ -16,8 +21,9 @@ private:
 
 private:
     std::stack<char> ungetCharsBuff_;
-    //TODO all Sources must return EOF as last character!
-    //TODO make sure ungetChar is the same as last returned char!
+    unsigned int lineNumber_ = 1;
+    unsigned int posInLine_ = 0;
+    bool endOfLineEncountered_ = false;
 };
 
 #endif // TKOMSIUNITS_SOURCE_H_INCLUDED
