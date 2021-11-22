@@ -5,21 +5,16 @@
 #include <iostream>
 #include <memory>
 
-const char FILENAME[] = "/home/przemek/studia/tkom-SIunits/input";
-
 int main(int argc, char** argv) {
-    (void) argc;
-    (void) argv;
-
-    std::unique_ptr<Source> src = std::make_unique<FileSource>(FILENAME);
-
-    /*char c;
-    while ((c = src->getChar()) != EOF) {
-        std::cout << c;
+    if (argc != 2) {
+        std::cerr << "Usage: " << argv[0] << " <path-to-input-file-to-analyze-lexically>"
+            << std::endl;
+        return 1;
     }
-    std::cout << "\n\n";*/
 
+    std::unique_ptr<Source> src = std::make_unique<FileSource>(argv[1]);
     Lexer lexer(*src);
+
     while (true) {
         Token token = lexer.getToken();
         std::cout << token << '\n';
@@ -28,4 +23,5 @@ int main(int argc, char** argv) {
             break;
         }
     }
+    return 0;
 }
