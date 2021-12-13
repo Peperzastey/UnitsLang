@@ -2,6 +2,7 @@ if(BUILD_TESTING)
     add_executable(SourceTests
         source_tests.cpp
         Source.cpp
+        StringSource.cpp
     )
 
     target_link_libraries(SourceTests

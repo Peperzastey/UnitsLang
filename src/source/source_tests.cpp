@@ -1,58 +1,36 @@
 #include "Source.h"
-#include <array>
+#include "StringSource.h"
 #include <gtest/gtest.h>
-#include <iostream>
-
-const std::string MOCK_SOURCE_STR = "abc\nd\nefg\nhij";
-
-class MockSource : public Source {
-public:
-    MockSource(const std::string &srcStr = MOCK_SOURCE_STR)
-        : chars_(srcStr) {}
-
-    char provideChar() {
-        if (pos_ >= chars_.size()) {
-            return EOF;
-        }
-        return chars_[pos_++];
-    }
-
-    const std::string& getWholeString() const {
-        return chars_;
-    }
-
-private:
-    const std::string chars_;
-    std::size_t pos_ = 0;
-};
 
 bool operator==(const PosInStream &lhs, const PosInStream &rhs) {
     return lhs.lineNumber == rhs.lineNumber && lhs.posInLine == rhs.posInLine;
 }
 
 TEST(SourceTests, GetUngetGetSequence) {
-    MockSource mock;
-    Source *src = &mock;
+    std::string testString = "abc\nd\nefg\nhij";
+    StringSource strSrc(testString);
+    Source *src = &strSrc;
 
     char c = src->getChar();
-    ASSERT_EQ(mock.getWholeString()[0], c);
+    ASSERT_EQ(testString[0], c);
     char c2 = src->getChar();
-    ASSERT_EQ(mock.getWholeString()[1], c2);
+    ASSERT_EQ(testString[1], c2);
     c = src->getChar();
-    ASSERT_EQ(mock.getWholeString()[2], c);
+    ASSERT_EQ(testString[2], c);
 
     src->ungetChar(c);
     src->ungetChar(c2);
 
     c = src->getChar();
-    ASSERT_EQ(mock.getWholeString()[1], c);
+    ASSERT_EQ(testString[1], c);
     c = src->getChar();
-    ASSERT_EQ(mock.getWholeString()[2], c);
+    ASSERT_EQ(testString[2], c);
 }
 
 TEST(SourceTests, GetCurrentPositionReturnsCorrectPos) {
-    MockSource mock("abc\nd\nefg\nhij");
-    Source *src = &mock;
+    std::string testString = "abc\nd\nefg\nhij";
+    StringSource strSrc(testString);
+    Source *src = &strSrc;
 
     ASSERT_EQ(src->getCurrentPosition(), (PosInStream{1, 0}));
     for (unsigned int i : {1, 2, 3, 4}) {
@@ -60,7 +38,7 @@ TEST(SourceTests, GetCurrentPositionReturnsCorrectPos) {
         ASSERT_EQ(src->getCurrentPosition(), (PosInStream{1, i}));
     }
 
-    src->ungetChar(mock.getWholeString()[3]);
+    src->ungetChar(testString[3]);
     src->getChar();
     ASSERT_EQ(src->getCurrentPosition(), (PosInStream{1, 4}));
 
