@@ -35,7 +35,8 @@ enum class TokenType {
     FUNC_RESULT,
     STRING,
     END_OF_INSTRUCTION,
-    END_OF_STREAM
+    END_OF_STREAM,
+    INVALID_TOKEN
 };
 
 struct Token {

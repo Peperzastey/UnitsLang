@@ -5,7 +5,7 @@
 #include <array>
 #include <iostream>
 
-std::ostream& operator<<(std::ostream &os, TokenType tokenType) {
+inline std::ostream& operator<<(std::ostream &os, TokenType tokenType) {
     static std::array typeNames = {
         "ID",
         "NUMBER",
@@ -35,12 +35,13 @@ std::ostream& operator<<(std::ostream &os, TokenType tokenType) {
         "FUNC_RESULT",
         "STRING",
         "END_OF_INSTRUCTION",
-        "END_OF_STREAM"
+        "END_OF_STREAM",
+        "INVALID_TOKEN"
     };
     return os << typeNames[static_cast<int>(tokenType)];
 }
 
-std::ostream& operator<<(std::ostream &os, Token token) {
+inline std::ostream& operator<<(std::ostream &os, Token token) {
     os << token.type << " : '";
     if (token.type == TokenType::NUMBER) {
         if (std::holds_alternative<double>(token.value)) {
