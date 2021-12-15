@@ -1,7 +1,6 @@
 if(BUILD_TESTING)
     add_executable(ParserTests
         parser_tests.cpp
-        Parser.cpp
         ../codeObjects/Instruction.cpp
         ../lexer/Lexer.cpp
         ../source/Source.cpp

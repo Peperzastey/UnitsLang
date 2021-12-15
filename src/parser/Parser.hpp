@@ -1,21 +1,29 @@
-#include "Parser.h"
+//#include "Parser.h"
+#ifndef TKOMSIUNITS_PARSER_HPP_INCLUDED
+#define TKOMSIUNITS_PARSER_HPP_INCLUDED
+
 #include "codeObjects/VarReference.h"
 #include "codeObjects/NumberValue.h"
+#include "codeObjects/Return.h"
+
 #include "error/ErrorHandler.h"
 #include "utils/printUtils.h"
 #include <cassert>
 #include <vector>
 #include <sstream>
 
-Parser::Parser(Lexer &lexer)
+template <typename TokenSource>
+Parser<TokenSource>::Parser(TokenSource &lexer)
     : lexer_(lexer) {
     }
 
-void Parser::advance() {
+template <typename TokenSource>
+void Parser<TokenSource>::advance() {
     currToken_ = lexer_.getToken();
 }
 
-Token Parser::requireToken(TokenType expected) {
+template <typename TokenSource>
+Token Parser<TokenSource>::requireToken(TokenType expected) {
     if (currToken_.type != expected) {
         reportUnexpectedToken(std::array{expected});
     }
@@ -24,8 +32,9 @@ Token Parser::requireToken(TokenType expected) {
     return token;
 }
 
+template <typename TokenSource>
 template <std::size_t N>
-void Parser::reportUnexpectedToken(const std::array<TokenType, N> &expected/*, const std::string &rule*/) {
+void Parser<TokenSource>::reportUnexpectedToken(const std::array<TokenType, N> &expected/*, const std::string &rule*/) {
     std::cout << "unexpected token\n";
     std::ostringstream os;
     os << "Unexpected token: {" << currToken_ << "}, expecting: [";
@@ -36,13 +45,15 @@ void Parser::reportUnexpectedToken(const std::array<TokenType, N> &expected/*, c
     ErrorHandler::handleFromParser(os.str());
 }
 
-void Parser::skipTokens(TokenType toBeSkipped) {
+template <typename TokenSource>
+void Parser<TokenSource>::skipTokens(TokenType toBeSkipped) {
     while (currToken_.type == toBeSkipped) {
         advance();
     }
 }
 
-std::unique_ptr<Program> Parser::parse() {
+template <typename TokenSource>
+std::unique_ptr<Program> Parser<TokenSource>::parse() {
     advance();
 
     std::unique_ptr<Instruction> instr;
@@ -65,7 +76,8 @@ std::unique_ptr<Program> Parser::parse() {
         );
 }
 
-std::unique_ptr<Instruction> Parser::parseInstruction() {
+template <typename TokenSource>
+std::unique_ptr<Instruction> Parser<TokenSource>::parseInstruction() {
     std::unique_ptr<Instruction> instr = nullptr;
     switch (currToken_.type) {
         case TokenType::ID: {
@@ -79,6 +91,7 @@ std::unique_ptr<Instruction> Parser::parseInstruction() {
             //...
             break;
         }
+            
         default:
             return nullptr;
     }
@@ -86,7 +99,8 @@ std::unique_ptr<Instruction> Parser::parseInstruction() {
     return instr;
 }
 
-std::unique_ptr<FuncCall> Parser::tryParseFuncCall(Token id) {
+template <typename TokenSource>
+std::unique_ptr<FuncCall> Parser<TokenSource>::tryParseFuncCall(Token id) {
     assert(id.type == TokenType::ID);
     if (currToken_.type != TokenType::PAREN_OPEN) {
         return nullptr;
@@ -98,7 +112,8 @@ std::unique_ptr<FuncCall> Parser::tryParseFuncCall(Token id) {
     return std::make_unique<FuncCall>(std::get<std::string>(id.value));
 }
 
-std::unique_ptr<VarDef> Parser::tryParseVarDef(Token id) {
+template <typename TokenSource>
+std::unique_ptr<VarDef> Parser<TokenSource>::tryParseVarDef(Token id) {
     assert(id.type == TokenType::ID);
     //TODO optional type designation
     if (currToken_.type != TokenType::ASSIGN) {
@@ -112,7 +127,8 @@ std::unique_ptr<VarDef> Parser::tryParseVarDef(Token id) {
     return std::make_unique<VarDef>(std::get<std::string>(id.value));
 }
 
-std::unique_ptr<Expression> Parser::parseExpression() {
+template <typename TokenSource>
+std::unique_ptr<Expression> Parser<TokenSource>::parseExpression() {
     std::unique_ptr<Expression> expr = parseAddExpression();
     //TODO wyrażenie logiczne
     return expr;
@@ -120,7 +136,8 @@ std::unique_ptr<Expression> Parser::parseExpression() {
     //std::unique_ptr<Instruction> rightOperand = parseExpressionOperand();
 }
 
-std::unique_ptr<Expression> Parser::parseAddExpression() {
+template <typename TokenSource>
+std::unique_ptr<Expression> Parser<TokenSource>::parseAddExpression() {
     std::unique_ptr<Expression> leftOperand = parseMultExpression();
     if (!leftOperand) {
         return nullptr;
@@ -141,7 +158,8 @@ std::unique_ptr<Expression> Parser::parseAddExpression() {
     return leftOperand;
 }
 
-std::unique_ptr<Expression> Parser::parseMultExpression() {
+template <typename TokenSource>
+std::unique_ptr<Expression> Parser<TokenSource>::parseMultExpression() {
     std::unique_ptr<Expression> leftOperand = parseExpressionElement();
     if (!leftOperand) {
         return nullptr;
@@ -162,7 +180,8 @@ std::unique_ptr<Expression> Parser::parseMultExpression() {
     return leftOperand;
 }
 
-std::unique_ptr<Expression> Parser::parseExpressionElement() {
+template <typename TokenSource>
+std::unique_ptr<Expression> Parser<TokenSource>::parseExpressionElement() {
     std::unique_ptr<Expression> element = nullptr;
 
     switch (currToken_.type) {
@@ -199,7 +218,8 @@ std::unique_ptr<Expression> Parser::parseExpressionElement() {
 }
 
 //TODO check if this function name wasn't yet used -- here
-std::unique_ptr<FuncDef> Parser::parseFuncDef() {
+template <typename TokenSource>
+std::unique_ptr<FuncDef> Parser<TokenSource>::parseFuncDef() {
     if (currToken_.type != TokenType::KEYWORD_FUNC) {
         return nullptr;
     }
@@ -220,3 +240,5 @@ std::unique_ptr<FuncDef> Parser::parseFuncDef() {
 
     return std::make_unique<FuncDef>(std::get<std::string>(id.value));
 }
+
+#endif // TKOMSIUNITS_PARSER_HPP_INCLUDED

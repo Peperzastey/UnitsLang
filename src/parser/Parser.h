@@ -10,9 +10,10 @@
 #include "codeObjects/BinaryExpression.h"
 #include <memory>
 
+template <typename TokenSource = Lexer>
 class Parser {
 public:
-    Parser(Lexer &lexer);
+    Parser(TokenSource &lexer);
     
     std::unique_ptr<Program> parse();
 
@@ -35,8 +36,10 @@ protected:
     void skipTokens(TokenType toBeSkipped);
 
 private:
-    Lexer &lexer_;
+    TokenSource &lexer_;
     Token currToken_;
 };
+
+#include "Parser.hpp"
 
 #endif // TKOMSIUNITS_PARSER_H_INCLUDED
