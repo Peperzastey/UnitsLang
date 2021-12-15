@@ -13,15 +13,11 @@
 
 class Program {
 public:
-    Program(std::vector<std::unique_ptr<Instruction>> &&instructions) {
-        for (auto &&instr : instructions) {
-            if ( FuncDef *funcDef = dynamic_cast<FuncDef*>(instr.get()) ) {
-                std::string name = funcDef->getName();
-                instr.release();
-                addFuncDef(name, std::unique_ptr<FuncDef>(funcDef));
-            } else {
-                instructions_.push_back(std::move(instr));
-            }
+    Program(std::vector<std::unique_ptr<FuncDef>> &&funcDefs,
+            std::vector<std::unique_ptr<Instruction>> &&instructions)
+            : instructions_(std::move(instructions)) {
+        for (auto &&func : funcDefs) {
+            addFuncDef(std::move(func));
         }
     }
     
@@ -42,7 +38,8 @@ public:
     }
 
 private:
-    void addFuncDef(const std::string &name, std::unique_ptr<FuncDef> funcDef) {
+    void addFuncDef(std::unique_ptr<FuncDef> funcDef) {
+        std::string name = funcDef->getName();
         auto [_, success] = funcDefs_.insert({ name, std::move(funcDef) });
         (void)_;
         if (!success) {

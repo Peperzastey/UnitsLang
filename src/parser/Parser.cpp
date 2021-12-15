@@ -46,13 +46,23 @@ std::unique_ptr<Program> Parser::parse() {
     advance();
 
     std::unique_ptr<Instruction> instr;
+    std::unique_ptr<FuncDef> funcDef;
     std::vector<std::unique_ptr<Instruction>> instructions;
+    std::vector<std::unique_ptr<FuncDef>> funcDefs;
     
-    while ((instr = parseInstruction())) {
-        instructions.push_back(std::move(instr));
+    while ((funcDef = parseFuncDef())
+        || (instr = parseInstruction())) {
+        if (funcDef) {
+            funcDefs.push_back(std::move(funcDef));
+        } else {
+            instructions.push_back(std::move(instr));
+        }
     }
 
-    return std::make_unique<Program>(std::move(instructions));
+    return std::make_unique<Program>(
+            std::move(funcDefs),
+            std::move(instructions)
+        );
 }
 
 std::unique_ptr<Instruction> Parser::parseInstruction() {
@@ -69,9 +79,6 @@ std::unique_ptr<Instruction> Parser::parseInstruction() {
             //...
             break;
         }
-        case TokenType::KEYWORD_FUNC:
-            instr = parseFuncDef();
-            break;
         default:
             return nullptr;
     }
@@ -193,7 +200,9 @@ std::unique_ptr<Expression> Parser::parseExpressionElement() {
 
 //TODO check if this function name wasn't yet used -- here
 std::unique_ptr<FuncDef> Parser::parseFuncDef() {
-    assert(currToken_.type == TokenType::KEYWORD_FUNC);
+    if (currToken_.type != TokenType::KEYWORD_FUNC) {
+        return nullptr;
+    }
     advance();
 
     Token id = requireToken(TokenType::ID);
@@ -207,7 +216,7 @@ std::unique_ptr<FuncDef> Parser::parseFuncDef() {
     skipTokens(TokenType::END_OF_INSTRUCTION);
     // parse optional (may be empty) list of instructions
     requireToken(TokenType::BRACKET_CLOSE);
-    //requireToken(TokenType::END_OF_INSTRUCTION);
+    requireToken(TokenType::END_OF_INSTRUCTION);
 
     return std::make_unique<FuncDef>(std::get<std::string>(id.value));
 }

@@ -1,10 +1,9 @@
 #ifndef TKOMSIUNITS_CODE_OBJECTS_FUNC_DEF_H_INCLUDED
 #define TKOMSIUNITS_CODE_OBJECTS_FUNC_DEF_H_INCLUDED
 
-#include "Instruction.h"
 #include <string>
 
-class FuncDef : public Instruction {
+class FuncDef {
 public:
     FuncDef(const std::string &name) : name_(name) {}
     

@@ -7,8 +7,6 @@
 #include <memory>
 
 int main(int argc, char** argv) {
-    double a = 2;
-    std::cout << a << '\n';
     if (argc != 2) {
         std::cerr << "Usage: " << argv[0] << " <path-to-input-file-to-analyze-lexically>"
             << std::endl;

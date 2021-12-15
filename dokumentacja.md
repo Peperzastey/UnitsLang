@@ -20,7 +20,7 @@ print( "Powierzchnia wynosi {area}, czyli {area in cm2}" )
 // wynik domyślnie jest wyświelany z przedrostkiem wielokrotności
 // obecnym w układzie SI dla danej jednostki - czyli poza kg wszystkie
 // jednostki są domyślnie bez przedrostków
-print( "Escapowanie: \{ 1Pa = 1N/1m2 \}" )
+print( "Escapowanie: \{ 1Pa = 1N/1m2 \} \"ciśnienie\"" )
 
 // istnieje możliwość podania liczby w grupach 3cyfrowych oddzielonych spacją
 mass = 23 001 250.5mg
@@ -174,7 +174,7 @@ Symbole rozpoznawane przez parser:
 Symbol startowy:
 kod                                     = {
                                           instrukcja
-                                        | komentarz 
+                                        | definicja_funkcji
                                         } ;
 
 tekst                                   = { znak } ;
@@ -182,7 +182,6 @@ tekst                                   = { znak } ;
 instrukcja                              = [
                                           definicja_zmiennej
                                         | przypisanie
-                                        | definicja_funkcji
                                         | wywołanie_funkcji
                                         | instrukcja_return
                                         | instrukcja_sufiksowa
@@ -213,7 +212,7 @@ składnik                                = id
 wartość                                 = liczba, [ jednostka ] ;
                                         (* brak jednostki oznacza skalara *)
 
-wyrażenie_logiczne                      = wyrażenie, rel_op, wyrażenie
+wyrażenie_logiczne                      = wyrażenie, rel_op, wyrażenie  //nawiasowanie!!! - tylko tak można połączyć 2 rel_op ????
                                         | wartość_logiczna ;
 
 jednostka                               = jednostka_prosta
@@ -239,7 +238,7 @@ lista_parametrów                        = [ parametr, { ',', parametr } ] ;
 
 parametr                                = id, oznaczenie_typu ;
 
-blok_instrukcji                         = '{' kod '}' ;
+blok_instrukcji                         = '{' instrukcja '}' ;
 
 wywołanie_funkcji                       = id, '(', lista_argumentów ,')' ;
 
