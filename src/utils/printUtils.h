@@ -12,6 +12,7 @@ inline std::ostream& operator<<(std::ostream &os, TokenType tokenType) {
         "KEYWORD_BOOL",
         "KEYWORD_BREAK",
         "KEYWORD_CONTINUE",
+        "KEYWORD_ELIF",
         "KEYWORD_ELSE",
         "KEYWORD_FALSE",
         "KEYWORD_FUNC",

@@ -9,6 +9,7 @@ std::unordered_map<std::string, TokenType> Lexer::keywords_ {
     { "bool"     , TokenType::KEYWORD_BOOL     },
     { "break"    , TokenType::KEYWORD_BREAK    },
     { "continue" , TokenType::KEYWORD_CONTINUE },
+    { "elif"     , TokenType::KEYWORD_ELIF     },
     { "else"     , TokenType::KEYWORD_ELSE     },
     { "false"    , TokenType::KEYWORD_FALSE    },
     { "func"     , TokenType::KEYWORD_FUNC     },

@@ -48,7 +48,7 @@ while area < 2m2 {
 
 if area > 3m2 {
     print( "Area is way too big" )
-} else if area > 2.5m2 {
+} elif area > 2.5m2 {
     print( "Area is slightly too big" )
 } else {
     print( "Area is acceptable" )
@@ -59,7 +59,7 @@ func fibonacci_meters (steps [1]) -> m {
     // indentacja bloku nie jest wymagana
     if steps == 0 {
         return 0m
-    } else if steps == 1 {
+    } elif steps == 1 {
         return 1m
     } else {
         // rekursja
@@ -150,11 +150,17 @@ jednostka_podstawowa                    = 's' | 'min' | 'h' | 'Hz' | 'g' | 'm' |
 
 prefix                                  = 'T' | 'G' | 'M' | 'k' | 'h' | 'da' | 'd' | 'c' | 'm' | 'u' | 'n' | 'p' ;
 
-add_op                                  = '+' | '-' ;
-
 mult_op                                 = '*' | '/' ;
 
-rel_op                                  = '==' | '!=' | '<' | '>' | '<=' | '>=' ;
+add_op                                  = '+' | '-' ;
+
+rel_op                                  = '<' | '>' | '<=' | '>=' ;
+
+equal_op                                = '==' | '!=' ;
+
+and_op                                  = '&&' ;
+
+or_op                                   = '||' ;
 
 sufiks_op                               = '++' | '--' ;
 
@@ -197,8 +203,14 @@ oznaczenie_typu                         = '[', typ, ']' ;
 
 typ                                     = jednostka | skalar | 'bool' ;
 
-wyrażenie                               = wyrażenie_addytywne
-                                        | wyrażenie_logiczne ;
+wyrażenie                               = wyrażenie_log_and, { or_op, wyrażenie_log_and } ;
+
+wyrażenie_log_and                       = wyrażenie_log_eq, { and_op, wyrażenie_log_eq } ;
+
+wyrażenie_log_eq                        = wyrażenie_log_rel, { equal_op, wyrażenie_log_rel } ;
+
+wyrażenie_log_rel                       = wyrażenie_addytywne, { rel_op, wyrażenie_addytywne }
+                                        | wartość_logiczna ;
 
 wyrażenie_addytywne                     = wyrażenie_multiplikatywne, { add_op, wyrażenie_multiplikatywne } ;
 
@@ -207,13 +219,10 @@ wyrażenie_multiplikatywne               = składnik, { mult_op, składnik } ;
 składnik                                = id
                                         | wartość
                                         | wywołanie_funkcji
-                                        | '(' wyrażenie_addytywne ')' ;
+                                        | '(' wyrażenie ')' ;
 
 wartość                                 = liczba, [ jednostka ] ;
                                         (* brak jednostki oznacza skalara *)
-
-wyrażenie_logiczne                      = wyrażenie, rel_op, wyrażenie  //nawiasowanie!!! - tylko tak można połączyć 2 rel_op ????
-                                        | wartość_logiczna ;
 
 jednostka                               = jednostka_prosta
                                         | jednostka_złożona ;
@@ -257,11 +266,11 @@ instrukcja_return                       = 'return', [ wyrażenie ] ;
 
 instrukcja_sufiksowa                    = id, sufiks_op ;
 
-pętla_while                             = 'while', wyrażenie_logiczne, blok_instrukcji ;
+pętla_while                             = 'while', wyrażenie, blok_instrukcji ;
 
-instrukcja_if                           = 'if', wyrażenie_logiczne, blok_instrukcji, { blok_else_if }, [ blok_else ] ;
+instrukcja_if                           = 'if', wyrażenie, blok_instrukcji, { blok_else_if }, [ blok_else ] ;
 
-blok_else_if                            = 'else if', wyrażenie_logiczne, blok_instrukcji ;
+blok_else_if                            = 'elif', wyrażenie, blok_instrukcji ;
 
 blok_else                               = 'else', blok_instrukcji ;
 ```
@@ -271,6 +280,7 @@ blok_else                               = 'else', blok_instrukcji ;
 bool
 break
 continue
+elif
 else
 false
 func

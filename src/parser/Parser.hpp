@@ -5,6 +5,8 @@
 #include "codeObjects/VarReference.h"
 #include "codeObjects/NumberValue.h"
 #include "codeObjects/Return.h"
+#include "codeObjects/Break.h"
+#include "codeObjects/Continue.h"
 
 #include "error/ErrorHandler.h"
 #include "utils/printUtils.h"
@@ -54,13 +56,12 @@ void Parser<TokenSource>::skipTokens(TokenType toBeSkipped) {
 
 template <typename TokenSource>
 std::unique_ptr<Program> Parser<TokenSource>::parse() {
-    advance();
-
     std::unique_ptr<Instruction> instr;
     std::unique_ptr<FuncDef> funcDef;
     std::vector<std::unique_ptr<Instruction>> instructions;
     std::vector<std::unique_ptr<FuncDef>> funcDefs;
     
+    advance();
     while ((funcDef = parseFuncDef())
         || (instr = parseInstruction())) {
         if (funcDef) {
@@ -91,12 +92,49 @@ std::unique_ptr<Instruction> Parser<TokenSource>::parseInstruction() {
             //...
             break;
         }
-            
+        case TokenType::KEYWORD_RETURN: {
+            advance();
+            instr = std::make_unique<Return>(parseExpression());
+            break;
+        }
+        case TokenType::KEYWORD_BREAK: {
+            advance();
+            instr = std::make_unique<Break>();
+            break;
+        }
+        case TokenType::KEYWORD_CONTINUE: {
+            advance();
+            instr = std::make_unique<Continue>();
+            break;
+        }
+        case TokenType::KEYWORD_IF: {
+            advance();
+            instr = tryParseIfInstr();
+            break;
+        }
+        case TokenType::KEYWORD_WHILE: {
+            advance();
+            instr = tryParseWhileInstr();
+            break;
+        }
         default:
             return nullptr;
     }
     requireToken(TokenType::END_OF_INSTRUCTION);
     return instr;
+}
+
+template <typename TokenSource>
+std::vector<std::unique_ptr<Instruction>> Parser<TokenSource>::parseInstructionBlock() {
+    requireToken(TokenType::BRACKET_OPEN);
+    skipTokens(TokenType::END_OF_INSTRUCTION);
+    //TODO allow empty lines!!! also between instructions!
+    std::vector<std::unique_ptr<Instruction>> block;
+    while (std::unique_ptr<Instruction> instr = parseInstruction()) {
+        block.push_back(std::move(instr));
+    }
+    requireToken(TokenType::BRACKET_CLOSE);
+    return block;
 }
 
 template <typename TokenSource>
@@ -125,6 +163,42 @@ std::unique_ptr<VarDef> Parser<TokenSource>::tryParseVarDef(Token id) {
         ErrorHandler::handleFromParser("Expected expression after '=' in variable definition");
     }
     return std::make_unique<VarDef>(std::get<std::string>(id.value));
+}
+
+template <typename TokenSource>
+std::unique_ptr<If> Parser<TokenSource>::tryParseIfInstr() {
+    std::unique_ptr<Expression> cond = parseExpression();
+
+    std::vector<std::unique_ptr<Instruction>> positiveBlock = parseInstructionBlock();
+    
+    std::unique_ptr<If> elseIf = nullptr;
+    switch (currToken_.type) {
+        case TokenType::KEYWORD_ELIF:
+            advance();
+            elseIf = tryParseIfInstr();
+            break;
+        case TokenType::KEYWORD_ELSE:
+            advance();
+            elseIf = std::make_unique<If>(parseInstructionBlock());
+            break;
+        default:
+            ;
+    }
+    return std::make_unique<If>(
+        std::move(cond),
+        std::move(positiveBlock),
+        std::move(elseIf)
+    );
+}
+
+template <typename TokenSource>
+std::unique_ptr<While> Parser<TokenSource>::tryParseWhileInstr() {
+    std::unique_ptr<Expression> cond = parseExpression();
+    std::vector<std::unique_ptr<Instruction>> body = parseInstructionBlock();
+    return std::make_unique<While>(
+        std::move(cond),
+        std::move(body)
+    );
 }
 
 template <typename TokenSource>
@@ -232,13 +306,12 @@ std::unique_ptr<FuncDef> Parser<TokenSource>::parseFuncDef() {
     requireToken(TokenType::PAREN_CLOSE);
     skipTokens(TokenType::END_OF_INSTRUCTION);
     // parse optional return type
-    requireToken(TokenType::BRACKET_OPEN);
-    skipTokens(TokenType::END_OF_INSTRUCTION);
-    // parse optional (may be empty) list of instructions
-    requireToken(TokenType::BRACKET_CLOSE);
+
+    std::vector<std::unique_ptr<Instruction>> body = parseInstructionBlock();
+
     requireToken(TokenType::END_OF_INSTRUCTION);
 
-    return std::make_unique<FuncDef>(std::get<std::string>(id.value));
+    return std::make_unique<FuncDef>(std::get<std::string>(id.value), std::move(body));
 }
 
 #endif // TKOMSIUNITS_PARSER_HPP_INCLUDED

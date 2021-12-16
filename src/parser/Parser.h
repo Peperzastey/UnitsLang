@@ -8,6 +8,8 @@
 #include "codeObjects/VarDef.h"
 #include "codeObjects/Expression.h"
 #include "codeObjects/BinaryExpression.h"
+#include "codeObjects/If.h"
+#include "codeObjects/While.h"
 #include <memory>
 
 template <typename TokenSource = Lexer>
@@ -21,6 +23,7 @@ protected:
     void advance();
     std::unique_ptr<FuncDef> parseFuncDef();
     std::unique_ptr<Instruction> parseInstruction();
+    std::vector<std::unique_ptr<Instruction>> parseInstructionBlock();
     std::unique_ptr<Expression> parseExpression();
     std::unique_ptr<Expression> parseAddExpression();
     std::unique_ptr<Expression> parseMultExpression();
@@ -29,6 +32,8 @@ protected:
 
     std::unique_ptr<FuncCall> tryParseFuncCall(Token id);
     std::unique_ptr<VarDef> tryParseVarDef(Token id);
+    std::unique_ptr<If> tryParseIfInstr();
+    std::unique_ptr<While> tryParseWhileInstr();
     
     Token requireToken(TokenType expected);
     template <std::size_t N>
