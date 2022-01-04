@@ -1,0 +1,15 @@
+if(BUILD_TESTING)
+    add_executable(LexerTests
+        lexer_tests.cpp
+        Lexer.cpp
+        ../source/Source.cpp
+        ../source/StringSource.cpp
+    )
+
+    target_link_libraries(LexerTests
+    PRIVATE
+        gtest
+        gtest_main
+        Threads::Threads
+    )
+endif()

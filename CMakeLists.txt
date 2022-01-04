@@ -23,3 +23,5 @@ include_directories(src)
 
 add_subdirectory(src)
 add_subdirectory(src/source)
+add_subdirectory(src/lexer)
+add_subdirectory(src/parser)
