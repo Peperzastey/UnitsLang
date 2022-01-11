@@ -8,6 +8,10 @@ class StrType : public Type {
 public:
     StrType() {}
     
+    /*TypeClass getTypeClass() const override {
+        return TypeClass::STRING;
+    }*/
+    
     std::string toString() const override {
         return "[str]";
     }

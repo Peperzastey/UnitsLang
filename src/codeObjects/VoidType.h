@@ -8,6 +8,10 @@ class VoidType : public Type {
 public:
     VoidType() {}
     
+    /*TypeClass getTypeClass() const override {
+        return TypeClass::VOID;
+    }*/
+    
     std::string toString() const override {
         return "";
     }

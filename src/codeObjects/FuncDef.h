@@ -4,6 +4,7 @@
 #include "Instruction.h"
 #include "Variable.h"
 #include "VoidType.h"
+#include "Type2.h"
 #include "error/ErrorHandler.h"
 #include <memory>
 #include <unordered_map>
@@ -16,7 +17,7 @@ public:
     FuncDef(
             const std::string &name,
             std::vector<Variable> &&params,
-            std::unique_ptr<Type> returnType,
+            Type2 returnType,
             std::vector<std::unique_ptr<Instruction>> &&body
         )
         : name_(name)
@@ -31,10 +32,6 @@ public:
                 );
             }
             paramsOrder_.push_back(iter->second);
-        }
-        
-        if (!returnType_) {
-            returnType_ = std::make_unique<VoidType>();
         }
     }
     
@@ -52,10 +49,8 @@ public:
             }  
         }
         output += ')';
-        std::string retTypeRepr = returnType_->toString();
-        if (!retTypeRepr.empty()) {
-            // empty repr string means VoidType
-            output += "->" + retTypeRepr;
+        if (returnType_.getTypeClass() != Type2::VOID) {
+            output += "->" + returnType_.toString();
         }
         return output;
     }
@@ -64,15 +59,15 @@ public:
         return name_;
     }
     
-    const Type* getType() const {
-        return returnType_.get();
+    const Type2& getType() const {
+        return returnType_;
     }
     
 private:
     const std::string name_;
     std::unordered_map<std::string, Variable> params_;
     std::vector<std::reference_wrapper<const Variable>> paramsOrder_;
-    std::unique_ptr<Type> returnType_;
+    Type2 returnType_;
     std::vector<std::unique_ptr<Instruction>> body_;
 };
 

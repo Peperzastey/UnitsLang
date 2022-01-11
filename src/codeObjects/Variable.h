@@ -1,13 +1,13 @@
 #ifndef TKOMSIUNITS_CODE_OBJECTS_VARIABLE_H_INCLUDED
 #define TKOMSIUNITS_CODE_OBJECTS_VARIABLE_H_INCLUDED
 
-#include "Type.h"
+#include "Type2.h"
 #include <string>
 #include <memory>
 
 class Variable {
 public:
-    Variable(const std::string &name, std::unique_ptr<Type> type)
+    Variable(const std::string &name, Type2 type)
         : name_(name), type_(std::move(type)) {}
     
     Variable(Variable &&) = default;
@@ -18,12 +18,12 @@ public:
     }
     
     std::string toString() const {
-        return name_ + type_->toString();
+        return name_ + type_.toString();
     }
     
 private:
     std::string name_;
-    std::unique_ptr<Type> type_;
+    Type2 type_;
     //std::variant<double, int> value_;
 };
 

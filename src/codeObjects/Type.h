@@ -5,6 +5,14 @@
 
 class Type {
 public:
+    enum TypeClass {
+        UNIT,
+        BOOL,
+        VOID,
+        STRING
+    };
+
+public:
     Type() {}
     virtual ~Type() {}
     

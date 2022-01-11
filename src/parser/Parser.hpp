@@ -339,40 +339,33 @@ codeobj::Unit Parser<TokenSource>::parseUnitTokens() {
 }
 
 template <typename TokenSource>
-std::unique_ptr<Type> Parser<TokenSource>::parseType() {
+std::optional<Type2> Parser<TokenSource>::parseType() {
     if (currToken_.type != TokenType::SQUARE_OPEN) {
-        return nullptr;
+        return std::nullopt;
     }
     advance();
     
-    std::unique_ptr<Type> type = parseTypeTokens();
+    Type2 type = parseTypeTokens();
     
     requireToken(TokenType::SQUARE_CLOSE);
-    return type;
+    return std::move(type);
 }
 
 template <typename TokenSource>
-std::unique_ptr<Type> Parser<TokenSource>::parseTypeTokens() {
-    std::unique_ptr<Type> type = nullptr;
-
+Type2 Parser<TokenSource>::parseTypeTokens() {
     switch (currToken_.type) {
         case TokenType::NUMBER:
             if (!std::holds_alternative<int>(currToken_.value) || std::get<int>(currToken_.value) != 1) {
                 ErrorHandler::handleFromParser("Type designation '[...]' holds number different than 1! Scalar type is denoted as '[1]'!");
             }
-            type = std::make_unique<codeobj::Unit>();
             advance();
-            break;
+            return Type2(codeobj::Unit());
         case TokenType::KEYWORD_BOOL:
-            type = std::make_unique<Bool>();
             advance();
-            break;
+            return Type2(Type2::BOOL);
         default:
-            type = std::make_unique<codeobj::Unit>(parseUnitTokens());
-            break;
+            return Type2(codeobj::Unit(parseUnitTokens()));
     }
-
-    return type;
 }
 
 //TODO check if this function name wasn't yet used -- here
@@ -405,15 +398,15 @@ std::unique_ptr<FuncDef> Parser<TokenSource>::parseFuncDef() {
     requireToken(TokenType::PAREN_CLOSE);
     
     // parse optional return type
-    std::unique_ptr<Type> returnType = nullptr;
+    Type2 returnType(Type2::VOID);
     if (currToken_.type == TokenType::FUNC_RESULT) {
         advance();
-        returnType = parseType();
-        if (!returnType) {
+        std::optional<Type2> funcResultType = parseType();
+        if (!funcResultType) {
             ErrorHandler::handleFromParser("'->' not followed by return-type in function definition");
+        } else {
+            returnType = std::move(*funcResultType);
         }
-    } else {
-        returnType = std::make_unique<VoidType>();
     }
     
     skipTokens(TokenType::END_OF_INSTRUCTION);
@@ -437,12 +430,12 @@ std::optional<Variable> Parser<TokenSource>::parseFuncParameter() {
     std::string paramName = std::get<std::string>(currToken_.value);
     advance();
 
-    std::unique_ptr<Type> type = parseType();
+    std::optional<Type2> type = parseType();
     if (!type) {
         ErrorHandler::handleFromParser("Parameter name not followed by type");
     }
     
-    return Variable(paramName, std::move(type));
+    return Variable(paramName, std::move(*type));
 }
 
 #endif // TKOMSIUNITS_PARSER_HPP_INCLUDED

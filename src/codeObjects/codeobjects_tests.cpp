@@ -6,12 +6,12 @@
 
 TEST(CodeObjectsTests, FuncDefWithDuplicateParamNamesThrows) {
     std::vector<Variable> params;
-    params.emplace_back("a", std::make_unique<codeobj::Unit>());
-    params.emplace_back("b", std::make_unique<codeobj::Unit>());
-    params.emplace_back("a", std::make_unique<codeobj::Unit>());
+    params.emplace_back("a", Type2(codeobj::Unit()));
+    params.emplace_back("b", Type2(codeobj::Unit()));
+    params.emplace_back("a", Type2(codeobj::Unit()));
 
     EXPECT_THROW({
-            FuncDef funcDef("f", std::move(params), nullptr, {});
+            FuncDef funcDef("f", std::move(params), Type2(), {});
         },
         std::runtime_error
     );
@@ -22,9 +22,9 @@ TEST(CodeObjectsTests, ProgramWithDuplicateFunctionNamesThrows) {
     std::vector<std::unique_ptr<Instruction>> emptyBody{};
 
     std::vector<std::unique_ptr<FuncDef>> functions;
-    functions.push_back(std::make_unique<FuncDef>("f", std::move(emptyParams), nullptr, std::move(emptyBody)));
-    functions.push_back(std::make_unique<FuncDef>("g", std::move(emptyParams), nullptr, std::move(emptyBody)));
-    functions.push_back(std::make_unique<FuncDef>("f", std::move(emptyParams), nullptr, std::move(emptyBody)));
+    functions.push_back(std::make_unique<FuncDef>("f", std::move(emptyParams), Type2(), std::move(emptyBody)));
+    functions.push_back(std::make_unique<FuncDef>("g", std::move(emptyParams), Type2(), std::move(emptyBody)));
+    functions.push_back(std::make_unique<FuncDef>("f", std::move(emptyParams), Type2(), std::move(emptyBody)));
 
     EXPECT_THROW({
             Program program(std::move(functions), {});

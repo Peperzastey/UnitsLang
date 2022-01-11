@@ -8,6 +8,10 @@ class Bool : public Type {
 public:
     Bool() {}
     
+    /*TypeClass getTypeClass() const override {
+        return TypeClass::BOOL;
+    }*/
+    
     std::string toString() const override {
         return "[bool]";
     }

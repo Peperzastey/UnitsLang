@@ -26,6 +26,11 @@ public:
     }
     
     Unit(Unit &&) = default;
+    Unit& operator=(Unit &&) = default;
+    
+    /*TypeClass getTypeClass() const override {
+        return TypeClass::UNIT;
+    }*/
 
     /*void addUnitComponent(Token op, Unit &&unit) {
         if (std::get<std::string>(op.value) == "*") {
@@ -41,7 +46,7 @@ public:
         return isScalar_;
     }
     
-    std::string toString() const override {
+    std::string toString() const {
         std::ostringstream os;
         os << *this;
         return os.str();
