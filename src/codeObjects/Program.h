@@ -21,6 +21,10 @@ public:
         }
     }
     
+    void execute() {
+        
+    }
+    
     void printInstructionsTypes() const {
         std::cout << "Num of instrs: " << instructions_.size()
             << "\nInstr types:\n";
@@ -45,7 +49,7 @@ private:
         if (!success) {
             std::ostringstream os;
             os << "Redefinition of function named '" << name << "'";
-            ErrorHandler::handleFromParser(os.str());
+            ErrorHandler::handleFromCodeObject(os.str());
         }
     }
 

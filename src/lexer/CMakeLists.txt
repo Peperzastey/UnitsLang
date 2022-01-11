@@ -12,4 +12,9 @@ if(BUILD_TESTING)
         gtest_main
         Threads::Threads
     )
+
+    add_test(
+        NAME LexerTests
+        COMMAND LexerTests
+    )
 endif()

@@ -7,6 +7,8 @@
 #include "codeObjects/Return.h"
 #include "codeObjects/Break.h"
 #include "codeObjects/Continue.h"
+#include "codeObjects/Bool.h"
+#include "codeObjects/VoidType.h"
 
 #include "error/ErrorHandler.h"
 #include "utils/printUtils.h"
@@ -117,8 +119,17 @@ std::unique_ptr<Instruction> Parser<TokenSource>::parseInstruction() {
             instr = tryParseWhileInstr();
             break;
         }
-        default:
+        case TokenType::KEYWORD_FUNC:
+            // handled in parseFuncDef()
+        case TokenType::BRACKET_CLOSE:
+            // end of instruction block
             return nullptr;
+        default: {
+            // invalid instruction
+            std::ostringstream os;
+            os << "Invalid instruction starting with token: " << currToken_;
+            ErrorHandler::handleFromParser(os.str());
+        }
     }
     requireToken(TokenType::END_OF_INSTRUCTION);
     return instr;
@@ -145,9 +156,24 @@ std::unique_ptr<FuncCall> Parser<TokenSource>::tryParseFuncCall(Token id) {
     }
     advance();
     skipTokens(TokenType::END_OF_INSTRUCTION);
+
     // parse arguments
+    std::vector<std::unique_ptr<Expression>> arguments;
+    std::unique_ptr<Expression> arg = parseExpression();
+    if (arg) {
+        arguments.push_back(std::move(arg));
+        while (currToken_.type == TokenType::COMMA) {
+            advance();
+            arg = parseExpression();
+            if (!arg) {
+                ErrorHandler::handleFromParser("Comma in function-call argument list not followed by an argument");
+            }
+            arguments.push_back(std::move(arg));
+        }
+    }
+
     requireToken(TokenType::PAREN_CLOSE);
-    return std::make_unique<FuncCall>(std::get<std::string>(id.value));
+    return std::make_unique<FuncCall>(std::get<std::string>(id.value), std::move(arguments));
 }
 
 template <typename TokenSource>
@@ -274,21 +300,79 @@ std::unique_ptr<Expression> Parser<TokenSource>::parseExpressionElement() {
             requireToken(TokenType::PAREN_CLOSE);
             break;
         case TokenType::NUMBER: {
-            //std::cout << "parsing number in exprElem\n";
             double numberValue;
             if (std::holds_alternative<double>(currToken_.value)) {
                 numberValue = std::get<double>(currToken_.value);
             } else {
                 numberValue = std::get<int>(currToken_.value);
             }
-            element = std::make_unique<NumberValue>(numberValue);
             advance();
+            codeobj::Unit unit = parseUnit();
+            element = std::make_unique<NumberValue>(numberValue, std::move(unit));
             break;
         }
         default:
             ;
     }
     return element;
+}
+
+template <typename TokenSource>
+codeobj::Unit Parser<TokenSource>::parseUnit() {
+    if (currToken_.type != TokenType::SQUARE_OPEN) {
+        return codeobj::Unit();
+    }
+    advance();
+    
+    codeobj::Unit unit = parseUnitTokens();
+    
+    requireToken(TokenType::SQUARE_CLOSE);
+    return unit;
+}
+
+template <typename TokenSource>
+codeobj::Unit Parser<TokenSource>::parseUnitTokens() {
+    //TODO parse complex units (expressions)
+    Token unit = requireToken(TokenType::UNIT);
+
+    return codeobj::Unit(std::get<Unit>(unit.value));
+}
+
+template <typename TokenSource>
+std::unique_ptr<Type> Parser<TokenSource>::parseType() {
+    if (currToken_.type != TokenType::SQUARE_OPEN) {
+        return nullptr;
+    }
+    advance();
+    
+    std::unique_ptr<Type> type = parseTypeTokens();
+    
+    requireToken(TokenType::SQUARE_CLOSE);
+    return type;
+}
+
+template <typename TokenSource>
+std::unique_ptr<Type> Parser<TokenSource>::parseTypeTokens() {
+    std::unique_ptr<Type> type = nullptr;
+
+    switch (currToken_.type) {
+        case TokenType::NUMBER:
+            if (!std::holds_alternative<int>(currToken_.value) || std::get<int>(currToken_.value) != 1) {
+                ErrorHandler::handleFromParser("Type designation '[...]' holds number different than 1! Scalar type is denoted as '[1]'!");
+            }
+            type = std::make_unique<codeobj::Unit>();
+            advance();
+            break;
+        case TokenType::KEYWORD_BOOL:
+            type = std::make_unique<Bool>();
+            advance();
+            break;
+        default:
+            type = std::make_unique<codeobj::Unit>(parseUnitTokens());
+            break;
+    }
+
+    return type;
 }
 
 //TODO check if this function name wasn't yet used -- here
@@ -302,16 +386,63 @@ std::unique_ptr<FuncDef> Parser<TokenSource>::parseFuncDef() {
     Token id = requireToken(TokenType::ID);
     requireToken(TokenType::PAREN_OPEN);
     skipTokens(TokenType::END_OF_INSTRUCTION);
-    // parse parameters
-    requireToken(TokenType::PAREN_CLOSE);
-    skipTokens(TokenType::END_OF_INSTRUCTION);
-    // parse optional return type
 
+    // parse parameters
+    std::vector<Variable> parameters;
+    std::optional<Variable> param = parseFuncParameter();
+    if (param) {
+        parameters.push_back(std::move(*param));
+        while (currToken_.type == TokenType::COMMA) {
+            advance();
+            param = parseFuncParameter();
+            if (!param) {
+                ErrorHandler::handleFromParser("Comma in function parameter list not followed by a parameter");
+            }
+            parameters.push_back(std::move(*param));
+        }
+    }
+
+    requireToken(TokenType::PAREN_CLOSE);
+    
+    // parse optional return type
+    std::unique_ptr<Type> returnType = nullptr;
+    if (currToken_.type == TokenType::FUNC_RESULT) {
+        advance();
+        returnType = parseType();
+        if (!returnType) {
+            ErrorHandler::handleFromParser("'->' not followed by return-type in function definition");
+        }
+    } else {
+        returnType = std::make_unique<VoidType>();
+    }
+    
+    skipTokens(TokenType::END_OF_INSTRUCTION);
     std::vector<std::unique_ptr<Instruction>> body = parseInstructionBlock();
 
     requireToken(TokenType::END_OF_INSTRUCTION);
 
-    return std::make_unique<FuncDef>(std::get<std::string>(id.value), std::move(body));
+    return std::make_unique<FuncDef>(
+            std::get<std::string>(id.value),
+            std::move(parameters),
+            std::move(returnType),
+            std::move(body)
+        );
+}
+
+template <typename TokenSource>
+std::optional<Variable> Parser<TokenSource>::parseFuncParameter() {
+    if (currToken_.type != TokenType::ID) {
+        return std::nullopt;
+    }
+    std::string paramName = std::get<std::string>(currToken_.value);
+    advance();
+
+    std::unique_ptr<Type> type = parseType();
+    if (!type) {
+        ErrorHandler::handleFromParser("Parameter name not followed by type");
+    }
+    
+    return Variable(paramName, std::move(type));
 }
 
 #endif // TKOMSIUNITS_PARSER_HPP_INCLUDED

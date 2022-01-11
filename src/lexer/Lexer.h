@@ -9,6 +9,7 @@
 enum class TokenType {
     ID,
     NUMBER,
+    UNIT,
     KEYWORD_BOOL,
     KEYWORD_BREAK,
     KEYWORD_CONTINUE,
@@ -19,6 +20,7 @@ enum class TokenType {
     KEYWORD_IF,
     KEYWORD_IN,
     KEYWORD_RETURN,
+    KEYWORD_STR,
     KEYWORD_TRUE,
     KEYWORD_WHILE,
     OP_MULT,
@@ -40,9 +42,38 @@ enum class TokenType {
     INVALID_TOKEN
 };
 
+enum class UnitType {
+    SECOND,
+    GRAM,
+    METER,
+    NEWTON,
+    PASCAL,
+    JOULE,
+    SCALAR //TODO only for Parser and Executor
+};
+
+const std::unordered_map<std::string, double> unitPrefixes {
+    { "T", 1'000'000'000'000.0 },
+    { "G", 1'000'000'000.0 },
+    { "M", 1'000'000.0 },
+    { "k", 1'000.0 },
+    { "h", 100.0 },
+    { "da", 10.0 },
+    { "", 1.0 },
+    { "d", 0.1 },
+    { "c", 0.01 },
+    { "m", 0.001 }
+};
+
+struct Unit {
+    std::string prefix = std::string("");
+    UnitType unit;
+    int power = 1;
+};
+
 struct Token {
     TokenType type;
-    std::variant<std::string, int, double> value;
+    std::variant<std::string, int, double, Unit> value;
 };
 
 class Lexer {
@@ -86,7 +117,8 @@ private:
     Source &source_;
     mutable char currChar_;
 
-    static std::unordered_map<std::string, TokenType> keywords_;
+    static const std::unordered_map<std::string, TokenType> keywords_;
+    static const std::unordered_map<std::string, Unit> units_;
 };
 
 #endif // TKOMSIUNITS_LEXER_H_INCLUDED

@@ -12,9 +12,15 @@ public:
         throw std::runtime_error(os.str());
     }
     
-    static void handleFormLexer(const std::string &msg /*, PosInText*/) {
+    static void handleFromLexer(const std::string &msg /*, PosInText*/) {
         std::ostringstream os;
         os << "Lexer error: " << msg;
+        throw std::runtime_error(os.str());
+    }
+    
+    static void handleFromCodeObject(const std::string &msg /*, PosInText*/) {
+        std::ostringstream os;
+        os << "CodeObj error: " << msg;
         throw std::runtime_error(os.str());
     }
 };

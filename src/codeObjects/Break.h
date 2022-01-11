@@ -6,7 +6,11 @@
 
 class Break : public Instruction {
 public:
-    Break(/*While &parent*/) {}
+    Break() {}
+    
+    InstrResult execute() override {
+        return InstrResult::BREAK;
+    }
     
     const std::string& getInstrType() const {
         static const std::string INSTR_TYPE = "Break";

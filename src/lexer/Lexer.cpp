@@ -4,8 +4,9 @@
 #include <cctype>
 #include <stdexcept>
 #include <sstream>
+#include <vector>
 
-std::unordered_map<std::string, TokenType> Lexer::keywords_ {
+const std::unordered_map<std::string, TokenType> Lexer::keywords_ {
     { "bool"     , TokenType::KEYWORD_BOOL     },
     { "break"    , TokenType::KEYWORD_BREAK    },
     { "continue" , TokenType::KEYWORD_CONTINUE },
@@ -16,9 +17,42 @@ std::unordered_map<std::string, TokenType> Lexer::keywords_ {
     { "if"       , TokenType::KEYWORD_IF       },
     { "in"       , TokenType::KEYWORD_IN       },
     { "return"   , TokenType::KEYWORD_RETURN   },
+    { "str"      , TokenType::KEYWORD_STR      },
     { "true"     , TokenType::KEYWORD_TRUE     },
     { "while"    , TokenType::KEYWORD_WHILE    }
 };
+
+const std::vector<std::pair<std::string, UnitType>> units {
+    { "s", UnitType::SECOND },
+    { "g", UnitType::GRAM },
+    { "m", UnitType::METER },
+    { "N", UnitType::NEWTON },
+    { "Pa", UnitType::PASCAL },
+    { "J", UnitType::JOULE }
+};
+
+const std::vector<std::pair<std::string, int>> unitPowers {
+    { "", 1 },
+    { "2", 2 },
+    { "3", 3 }
+};
+
+std::unordered_map<std::string, Unit> createUnitsMap() {
+    std::unordered_map<std::string, Unit> unitsMap;
+    for (auto &&[pref, _] : unitPrefixes) {
+        (void)_;
+        for (auto &&[unit, unitVal] : units) {
+            for (auto &&[power, powerVal] : unitPowers) {
+                std::string unitString = pref + unit + power;
+                Unit unitStructure {pref, unitVal, powerVal};
+                unitsMap.insert({ std::move(unitString), std::move(unitStructure) });
+            }
+        }
+    }
+    return unitsMap;
+}
+
+const std::unordered_map<std::string, Unit> Lexer::units_ = createUnitsMap();
 
 char Lexer::discardWhitespacesAndComments() {
     char c;
@@ -57,7 +91,7 @@ void Lexer::discardInstrBreak() {
         c = source_.getChar();
     } while (isblank(c));
     if (!consumeNewline(c)) {
-        ErrorHandler::handleFormLexer("Instruction break ('\\') followed by non-space character!");
+        ErrorHandler::handleFromLexer("Instruction break ('\\') followed by non-space character!");
     }
 }
 
@@ -69,7 +103,7 @@ bool Lexer::consumeNewline(char c) {
     }
     if (c != '\n') {
         if (gotR) {
-            ErrorHandler::handleFormLexer("'\\r' not followed by '\\n'!");
+            ErrorHandler::handleFromLexer("'\\r' not followed by '\\n'!");
         }
         return false;
     }
@@ -123,7 +157,7 @@ Token Lexer::getToken() {
         case EOF:
             return { TokenType::END_OF_STREAM, "" };
         default:
-            ErrorHandler::handleFormLexer("Unknown lexem");
+            ErrorHandler::handleFromLexer("Unknown lexem");
             return { TokenType::INVALID_TOKEN, "" };
     }
 }
@@ -167,7 +201,7 @@ Token Lexer::constructRelationalOp(char c) {
 Token Lexer::constructNotEq(char c) {
     c = source_.getChar();
     if (c != '=') {
-        ErrorHandler::handleFormLexer("'!' not followed by '='!");
+        ErrorHandler::handleFromLexer("'!' not followed by '='!");
     }
     return { TokenType::OP_REL, "!=" };
 }
@@ -183,7 +217,7 @@ Token Lexer::constructString(char c) {
         c = source_.getChar();
 
         if (consumeNewline(c)) {
-            ErrorHandler::handleFormLexer("closing '\"' not found in string before encountering newline!");
+            ErrorHandler::handleFromLexer("closing '\"' not found in string before encountering newline!");
         }
 
         assertStringLength(++length);
@@ -222,6 +256,10 @@ Token Lexer::constructIdOrUnitOrKeyword(char c) {
     if (auto it = keywords_.find(value); it != keywords_.end()) {
         return { it->second, value };
     }
+    // check if it is a unit
+    if (auto it = units_.find(value); it != units_.end()) {
+        return { TokenType::UNIT, it->second };
+    }
     return { TokenType::ID, value };
 }
 
@@ -238,7 +276,7 @@ Token Lexer::constructNumber(char c) {
 
         if (isdigit(c)) {
             if (value == 0) { // first digit is 0 and is not followed by dot
-                ErrorHandler::handleFormLexer("First digit is 0 and is not followed by dot in number!");
+                ErrorHandler::handleFromLexer("First digit is 0 and is not followed by dot in number!");
             }
             ++digitInBlockCounter;
             value = value * 10 + c - '0';
@@ -249,22 +287,22 @@ Token Lexer::constructNumber(char c) {
             case ' ':
                 ++separatorCounter;
                 if (!isdigit(prevCh)) {
-                    ErrorHandler::handleFormLexer("Digit block separator not following a digit in number!");
+                    ErrorHandler::handleFromLexer("Digit block separator not following a digit in number!");
                 }
                 if (digitInBlockCounter > 3) {
-                    ErrorHandler::handleFormLexer("Digit block in number longer than 3 digits!");
+                    ErrorHandler::handleFromLexer("Digit block in number longer than 3 digits!");
                 }
                 digitInBlockCounter = 0; // separator starts a new block
                 break;
 
             case '.': {
                 if (!isdigit(prevCh)) {
-                    ErrorHandler::handleFormLexer("Dot not following a digit in number!");
+                    ErrorHandler::handleFromLexer("Dot not following a digit in number!");
                 }
 
                 auto [intValue, intLength] = parseIntFromSource();
                 if (intLength == 0) {
-                    ErrorHandler::handleFormLexer("Fraction part is empty in number!");
+                    ErrorHandler::handleFromLexer("Fraction part is empty in number!");
                 }
                 int divisor = 1;
                 for (; intLength > 0; --intLength) {
@@ -304,7 +342,7 @@ void Lexer::assertIdLength(unsigned int length) const {
     if (length > MAX_ID_LENGTH) {
         std::ostringstream msg;
         msg << "Id too long! Max: " << MAX_ID_LENGTH << "chars";
-        ErrorHandler::handleFormLexer(msg.str());
+        ErrorHandler::handleFromLexer(msg.str());
     }
 }
 
@@ -312,7 +350,7 @@ void Lexer::assertIntNumberLength(unsigned int length) const {
     if (length > MAX_INT_NUMBER_LENGTH) {
         std::ostringstream msg;
         msg << "Number too long! Max: " << MAX_INT_NUMBER_LENGTH << "chars";
-        ErrorHandler::handleFormLexer(msg.str());
+        ErrorHandler::handleFromLexer(msg.str());
     }
 }
 
@@ -320,7 +358,7 @@ void Lexer::assertPostDotNumberLength(unsigned int length) const {
     if (length > MAX_POST_DOT_NUMBER_LENGTH) {
         std::ostringstream msg;
         msg << "Fraction number too long! Max: " << MAX_POST_DOT_NUMBER_LENGTH << "chars";
-        ErrorHandler::handleFormLexer(msg.str());
+        ErrorHandler::handleFromLexer(msg.str());
     }
 }
 
@@ -328,6 +366,6 @@ void Lexer::assertStringLength(unsigned int length) const {
     if (length > MAX_STRING_LITERAL_LENGTH) {
         std::ostringstream msg;
         msg << "String literal too long! Max: " << MAX_STRING_LITERAL_LENGTH << "chars";
-        ErrorHandler::handleFormLexer(msg.str());
+        ErrorHandler::handleFromLexer(msg.str());
     }
 }

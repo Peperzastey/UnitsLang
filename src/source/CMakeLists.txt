@@ -11,4 +11,9 @@ if(BUILD_TESTING)
         gtest_main
         Threads::Threads
     )
+
+    add_test(
+        NAME SourceTests
+        COMMAND SourceTests
+    )
 endif()

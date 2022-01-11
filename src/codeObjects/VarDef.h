@@ -8,6 +8,11 @@ class VarDef : public Instruction {
 public:
     VarDef(const std::string &name) : name_(name) {}
     
+    InstrResult execute() override {
+        //TODO
+        return InstrResult::NORMAL;
+    }
+    
     const std::string& getInstrType() const {
         static const std::string INSTR_TYPE = "VarDef";
         return INSTR_TYPE;

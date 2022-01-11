@@ -10,7 +10,11 @@
 #include "codeObjects/BinaryExpression.h"
 #include "codeObjects/If.h"
 #include "codeObjects/While.h"
+#include "codeObjects/Unit.h"
+#include "codeObjects/Type.h"
+#include "codeObjects/Variable.h"
 #include <memory>
+#include <optional>
 
 template <typename TokenSource = Lexer>
 class Parser {
@@ -28,7 +32,14 @@ protected:
     std::unique_ptr<Expression> parseAddExpression();
     std::unique_ptr<Expression> parseMultExpression();
     std::unique_ptr<Expression> parseExpressionElement();
-    //std::unique_ptr<Expression> parseParenthesisedExpression();
+
+    codeobj::Unit parseUnit();
+    codeobj::Unit parseUnitTokens();
+    std::unique_ptr<Type> parseType();
+    std::unique_ptr<Type> parseTypeTokens();
+    //std::unique_ptr<codeObj::Unit> parseUnitExpressionElement()
+    
+    std::optional<Variable> parseFuncParameter();
 
     std::unique_ptr<FuncCall> tryParseFuncCall(Token id);
     std::unique_ptr<VarDef> tryParseVarDef(Token id);

@@ -6,7 +6,11 @@
 
 class Continue : public Instruction {
 public:
-    Continue(/*While &parent*/) {}
+    Continue() {}
+    
+    InstrResult execute() override {
+        return InstrResult::CONTINUE;
+    }
     
     const std::string& getInstrType() const {
         static const std::string INSTR_TYPE = "Continue";

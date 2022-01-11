@@ -12,14 +12,19 @@ public:
     BinaryExpression(std::unique_ptr<Expression> leftOperand,
                Token op,
                std::unique_ptr<Expression> rightOperand)
-        : leftOperand_(std::move(leftOperand))\
+        : leftOperand_(std::move(leftOperand))
         , rightOperand_(std::move(rightOperand))
         , operator_(op) {}
     
-    const std::string& getInstrType() const override {
+    /*InstrResult execute() override {
+        //TODO
+        return InstrResult::NORMAL;
+    }*/
+    
+    /*const std::string& getInstrType() const override {
         static const std::string INSTR_TYPE = "BinaryExpression";
         return INSTR_TYPE;
-    }
+    }*/
 
     std::string getRPN() const override {
         std::ostringstream os;

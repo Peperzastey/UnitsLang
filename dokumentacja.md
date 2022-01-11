@@ -10,11 +10,11 @@ Typowanie w przedstawionym języku jest statyczne i silne.
 
 ## Przykładowy kod źródłowy
 ```
-length = 2cm
-width = 500 mm
+length = 2[cm]
+width = 500 [mm]
 
-area = 14m2 + (length * width) - 10N / 6Pa
-print( "Powierzchnia wynosi {area}, czyli {area in cm2}" )
+area = 14[m2] + (length * width) - 10[N] / 6[Pa]
+print( "Powierzchnia wynosi {area}, czyli {area in [cm2]}" )
 // stdout: Powierzchnia wynosi 15.677m2, czyli 156 766.667cm2
 
 // wynik domyślnie jest wyświelany z przedrostkiem wielokrotności
@@ -23,54 +23,54 @@ print( "Powierzchnia wynosi {area}, czyli {area in cm2}" )
 print( "Escapowanie: \{ 1Pa = 1N/1m2 \} \"ciśnienie\"" )
 
 // istnieje możliwość podania liczby w grupach 3cyfrowych oddzielonych spacją
-mass = 23 001 250.5mg
+mass = 23 001 250.5[mg]
 // \ na końcu linii umożliwia kontynuację instrukcji w następnej linii
-calculated_work = (mass * 2 * area * 2.3km) \
-    / (length * 5min * 2 000us)
+calculated_work = (mass * 2 * area * 2.3[km]) \
+    / (length * 5[min] * 2 000[us])
 print( "To wyliczenie pewnie nie ma sensu, ale energia wyniosła" \
     "{calculated_work}" )
 
-area = 500cm2
-acc = 2 m/s2
-dist = acc * 0.5h * 2s
-speed = dist * 15Hz
+area = 500[cm2]
+acc = 2 [m/s2]
+dist = acc * 0.5[h] * 2[s]
+speed = dist * 15[Hz]
 
-pressure1 = 5kg/(m*s2)
-pressure2 = 14 432 kg/m/s2
+pressure1 = 5[kg/(m*s2)]
+pressure2 = 14 432 [kg/m/s2]
 
-length = 2.5cm
-width = 2cm
+length = 2.5[cm]
+width = 2[cm]
 area = length * width
-while area < 2m2 {
+while area < 2[m2] {
     width = width * 1.5
     area = length * width
 }
 
-if area > 3m2 {
+if area > 3[m2] {
     print( "Area is way too big" )
-} elif area > 2.5m2 {
+} elif area > 2.5[m2] {
     print( "Area is slightly too big" )
 } else {
     print( "Area is acceptable" )
 }
 
 // parametry funkcji przekazywane są przez wartość
-func fibonacci_meters (steps [1]) -> m {
+func fibonacci_meters (steps [1]) -> [m] {
     // indentacja bloku nie jest wymagana
     if steps == 0 {
-        return 0m
+        return 0[m]
     } elif steps == 1 {
-        return 1m
+        return 1[m]
     } else {
         // rekursja
         return fibonacci_meters(steps - 1) + fibonacci_meters(steps - 2)
     }
 }
 
-func fibonacci_speed_iterative (steps [1]) -> m/s {
+func fibonacci_speed_iterative (steps [1]) -> [m/s] {
     // zmienne lokalne
-    elem0 = 0m/s
-    elem1 = 1m/s
+    elem0 = 0[m/s]
+    elem1 = 1[m/s]
     while steps > 0 {
         temp = elem1
         elem1 = elem0 + elem1
@@ -201,7 +201,9 @@ definicja_zmiennej                      = id, [ oznaczenie_typu ], '=', wyrażen
 
 oznaczenie_typu                         = '[', typ, ']' ;
 
-typ                                     = jednostka | skalar | 'bool' ;
+oznaczenie_jednostki                    = '[', jednostka, ']' ;
+
+typ                                     = jednostka | skalar | 'bool' | 'str' ;
 
 wyrażenie                               = wyrażenie_log_and, { or_op, wyrażenie_log_and } ;
 
@@ -221,26 +223,37 @@ składnik                                = id
                                         | wywołanie_funkcji
                                         | '(' wyrażenie ')' ;
 
-wartość                                 = liczba, [ jednostka ] ;
+wartość                                 = liczba, [ oznaczenie_jednostki ] ;
                                         (* brak jednostki oznacza skalara *)
 
-jednostka                               = jednostka_prosta
-                                        | jednostka_złożona ;
+//jednostka                               = jednostka_prosta
+//                                        | jednostka_złożona ;
 
-jednostka_prosta                        = [ prefix ], ( jednostka_podstawowa | potega_jednostki ) ;
+//jednostka_prosta                        = [ prefix ], jednostka_podstawowa, [ potega_jednostki ] ;
 
-potega_jednostki                        = jednostka_podstawowa, ( '2' | '3' ) ;
+//potega_jednostki                        = '2' | '3' ;
 
-jednostka_złożona                       = wyrażenie_multiplikatywne_jednostkowe ;
+//jednostka_złożona                       = wyrażenie_multiplikatywne_jednostkowe ;
 
-wyrażenie_multiplikatywne_jednostkowe   = składnik_jednostkowy, { mult_op, składnik_jednostkowy } ;
+//wyrażenie_multiplikatywne_jednostkowe   = składnik_jednostkowy, { mult_op, składnik_jednostkowy } ;
+
+//składnik_jednostkowy                    = jednostka_prosta
+//                                        | '(' wyrażenie_multiplikatywne_jednostkowe ')' ;
+
+-------
+jednostka                               = składnik_jednostkowy, { mult_op, składnik_jednostkowy } ;
 
 składnik_jednostkowy                    = jednostka_prosta
-                                        | '(' wyrażenie_multiplikatywne_jednostkowe ')' ;
+                                        | '(' jednostka ')' ;
+
+jednostka_prosta                        = [ prefix ], jednostka_podstawowa, [ potega_jednostki ] ;
+
+potega_jednostki                        = '2' | '3' ;
+-------
 
 przypisanie                             = id, '=', wyrażenie ;
 
-definicja_funkcji                       = 'func', id, '(', lista_parametrów, ')', [ '->', typ ], blok_instrukcji ;
+definicja_funkcji                       = 'func', id, '(', lista_parametrów, ')', [ '->', oznaczenie_typu ], blok_instrukcji ;
                                         (* brak -> ... oznacza funkcję niezwracającą wartości *)
 
 lista_parametrów                        = [ parametr, { ',', parametr } ] ;
@@ -260,7 +273,7 @@ string                                  = ciąg_znaków_w_cudzysłowach, { ciąg
 
 ciąg_znaków_w_cudzysłowach              = '"', { znak - '"' | escapowany_cudzysłów | odwołanie_do_zmiennej }, '"' ;
 
-odwołanie_do_zmiennej                   = '{', id, [ 'in', jednostka ], '}' ;
+odwołanie_do_zmiennej                   = '{', id, [ 'in', oznaczenie_jednostki ], '}' ;
 
 instrukcja_return                       = 'return', [ wyrażenie ] ;
 
@@ -288,6 +301,7 @@ if
 in
 print    //funkcja wbudowana
 return
+str
 true
 while
 ```

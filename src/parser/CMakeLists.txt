@@ -13,4 +13,9 @@ if(BUILD_TESTING)
         gtest_main
         Threads::Threads
     )
+    
+    add_test(
+        NAME ParserTests
+        COMMAND ParserTests
+    )
 endif()

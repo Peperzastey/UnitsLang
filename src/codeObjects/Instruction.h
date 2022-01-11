@@ -3,10 +3,19 @@
 
 #include <string>
 
+enum class InstrResult {
+    NORMAL,
+    RETURN, // +value -- set in stack in ExecutionContext(/Interpreter)?
+    BREAK,
+    CONTINUE
+    //EXCEPTION ? // +exception type
+};
+
 class Instruction {
 public:
     virtual ~Instruction() = 0;
     
+    virtual InstrResult execute() = 0;
     virtual const std::string& getInstrType() const = 0;
 };
 

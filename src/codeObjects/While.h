@@ -15,6 +15,11 @@ public:
         )
         : cond_(std::move(cond))
         , body_(std::move(body)) {}
+        
+    InstrResult execute() override {
+        //TODO
+        return InstrResult::NORMAL;
+    }
     
     const std::string& getInstrType() const {
         static const std::string INSTR_TYPE = "While";

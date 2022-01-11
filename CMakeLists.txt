@@ -21,7 +21,10 @@ find_package(Threads)
 
 include_directories(src)
 
+include(CTest)
+
 add_subdirectory(src)
 add_subdirectory(src/source)
 add_subdirectory(src/lexer)
 add_subdirectory(src/parser)
+add_subdirectory(src/codeObjects)

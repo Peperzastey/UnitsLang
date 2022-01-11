@@ -9,6 +9,7 @@ inline std::ostream& operator<<(std::ostream &os, TokenType tokenType) {
     static std::array typeNames = {
         "ID",
         "NUMBER",
+        "UNIT",
         "KEYWORD_BOOL",
         "KEYWORD_BREAK",
         "KEYWORD_CONTINUE",
@@ -19,6 +20,7 @@ inline std::ostream& operator<<(std::ostream &os, TokenType tokenType) {
         "KEYWORD_IF",
         "KEYWORD_IN",
         "KEYWORD_RETURN",
+        "KEYWORD_STR",
         "KEYWORD_TRUE",
         "KEYWORD_WHILE",
         "OP_MULT",
@@ -42,6 +44,23 @@ inline std::ostream& operator<<(std::ostream &os, TokenType tokenType) {
     return os << typeNames[static_cast<int>(tokenType)];
 }
 
+inline std::ostream& operator<<(std::ostream &os, UnitType unitType) {
+    static std::array typeNames = {
+        "s",
+        "g",
+        "m",
+        "N",
+        "Pa",
+        "J",
+        "SCALAR"
+    };
+    return os << typeNames[static_cast<int>(unitType)];
+}
+
+inline std::ostream& operator<<(std::ostream &os, Unit unit) {
+    return os << unit.prefix << unit.unit << (unit.power > 1 ? std::to_string(unit.power) : "");
+}
+
 inline std::ostream& operator<<(std::ostream &os, Token token) {
     os << token.type << " : '";
     if (token.type == TokenType::NUMBER) {
@@ -50,6 +69,8 @@ inline std::ostream& operator<<(std::ostream &os, Token token) {
         } else {
             os << std::get<int>(token.value);
         }
+    } else if (token.type == TokenType::UNIT ) {
+        os << std::get<Unit>(token.value);
     } else {
         os << std::get<std::string>(token.value);
     }

@@ -25,6 +25,11 @@ public:
         , positiveBlock_(std::move(positiveBlock))
         , elseIf_(nullptr) {}
     
+    InstrResult execute() override {
+        //TODO
+        return InstrResult::NORMAL;
+    }
+    
     const std::string& getInstrType() const {
         static const std::string INSTR_TYPE = "If";
         return INSTR_TYPE;
