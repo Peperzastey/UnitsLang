@@ -11,13 +11,10 @@ public:
     Return(std::unique_ptr<Expression> expr)
         : expr_(std::move(expr)) {}
         
-    InstrResult execute() override {
+    InstrResult execute([[maybe_unused]] Interpreter &interpreter) const override {
         if (expr_) {
-            //expr_->calculate();
-            //TODO save expr result
-        } else {
-            //... (return;)
-            //TODO return value is void
+            Value value = expr_->calculate(interpreter);
+            interpreter.setReturnValue(std::move(value));
         }
         return InstrResult::RETURN;
     }

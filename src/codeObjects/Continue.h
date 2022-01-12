@@ -8,7 +8,7 @@ class Continue : public Instruction {
 public:
     Continue() {}
     
-    InstrResult execute() override {
+    InstrResult execute([[maybe_unused]] Interpreter &interpreter) const override {
         return InstrResult::CONTINUE;
     }
     

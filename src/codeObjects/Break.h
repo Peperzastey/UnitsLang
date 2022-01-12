@@ -8,7 +8,7 @@ class Break : public Instruction {
 public:
     Break() {}
     
-    InstrResult execute() override {
+    InstrResult execute([[maybe_unused]] Interpreter &interpreter) const override {
         return InstrResult::BREAK;
     }
     

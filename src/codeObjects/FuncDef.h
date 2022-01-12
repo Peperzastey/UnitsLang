@@ -1,12 +1,13 @@
 #ifndef TKOMSIUNITS_CODE_OBJECTS_FUNC_DEF_H_INCLUDED
 #define TKOMSIUNITS_CODE_OBJECTS_FUNC_DEF_H_INCLUDED
 
-#include "Instruction.h"
+#include "InstructionBlock.h"
 #include "Variable.h"
-#include "VoidType.h"
 #include "Type2.h"
+#include "Value.h"
 #include "error/ErrorHandler.h"
 #include <memory>
+#include <optional>
 #include <unordered_map>
 #include <vector>
 #include <functional>
@@ -18,7 +19,7 @@ public:
             const std::string &name,
             std::vector<Variable> &&params,
             Type2 returnType,
-            std::vector<std::unique_ptr<Instruction>> &&body
+            std::unique_ptr<InstructionBlock> &&body
         )
         : name_(name)
         , returnType_(std::move(returnType))
@@ -34,6 +35,8 @@ public:
             paramsOrder_.push_back(iter->second);
         }
     }
+    
+    std::optional<Value> call(Interpreter &interpreter, std::vector<Value> &&args) const;
     
     const std::string& getInstrType() const {
         static const std::string INSTR_TYPE = "FuncDef";
@@ -68,7 +71,7 @@ private:
     std::unordered_map<std::string, Variable> params_;
     std::vector<std::reference_wrapper<const Variable>> paramsOrder_;
     Type2 returnType_;
-    std::vector<std::unique_ptr<Instruction>> body_;
+    std::unique_ptr<InstructionBlock> body_;
 };
 
 #endif // TKOMSIUNITS_CODE_OBJECTS_FUNC_DEF_H_INCLUDED

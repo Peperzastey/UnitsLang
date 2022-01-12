@@ -2,10 +2,59 @@
 #define TKOMSIUNITS_CODE_OBJECTS_BINARY_EXPRESSION_H_INCLUDED
 
 #include "Expression.h"
+#include "Value.h"
 #include "lexer/Lexer.h"
+#include "error/ErrorHandler.h"
 #include <string>
+#include <unordered_map>
 #include <memory>
 #include <sstream>
+
+inline void add(Value &left, const Value &right) {
+    if (left.type.getTypeClass() != Type2::NUMBER || right.type.getTypeClass() != Type2::NUMBER) {
+        ErrorHandler::handleTypeMismatch("Addition operands must be of numeric type");
+    }
+    if (left.type != right.type) {
+        ErrorHandler::handleTypeMismatch("Addition operands are not type-compatibile");
+    }
+    //TODO units can have different prefixes! -- actualise value and type
+    left.value = left.asDouble() + right.asDouble();
+}
+
+inline void minus(Value &left, const Value &right) {
+    if (left.type.getTypeClass() != Type2::NUMBER || right.type.getTypeClass() != Type2::NUMBER) {
+        ErrorHandler::handleTypeMismatch("Addition operands must be of numeric type");
+    }
+    if (left.type != right.type) {
+        ErrorHandler::handleTypeMismatch("Addition operands are not type-compatibile");
+    }
+    //TODO units can have different prefixes! -- actualise value and type
+    left.value = left.asDouble() - right.asDouble();
+}
+
+inline void greaterThan(Value &left, const Value &right) {
+    if (left.type.getTypeClass() != Type2::NUMBER || right.type.getTypeClass() != Type2::NUMBER) {
+        ErrorHandler::handleTypeMismatch("GreaterThan operands must be of numeric type");
+    }
+    if (left.type != right.type) {
+        ErrorHandler::handleTypeMismatch("GreaterThan operands are not type-compatibile");
+    }
+    //TODO units can have different prefixes!
+    left.value = left.asDouble() > right.asDouble();
+    left.type = Type2::BOOL;
+}
+
+inline void lessThan(Value &left, const Value &right) {
+    if (left.type.getTypeClass() != Type2::NUMBER || right.type.getTypeClass() != Type2::NUMBER) {
+        ErrorHandler::handleTypeMismatch("LessThan operands must be of numeric type");
+    }
+    if (left.type != right.type) {
+        ErrorHandler::handleTypeMismatch("LessThan operands are not type-compatibile");
+    }
+    //TODO units can have different prefixes!
+    left.value = left.asDouble() < right.asDouble();
+    left.type = Type2::BOOL;
+}
 
 class BinaryExpression : public Expression {
 public:
@@ -16,15 +65,18 @@ public:
         , rightOperand_(std::move(rightOperand))
         , operator_(op) {}
     
-    /*InstrResult execute() override {
-        //TODO
-        return InstrResult::NORMAL;
-    }*/
-    
-    /*const std::string& getInstrType() const override {
-        static const std::string INSTR_TYPE = "BinaryExpression";
-        return INSTR_TYPE;
-    }*/
+    Value calculate([[maybe_unused]] Interpreter &interpreter) override {
+        static const std::unordered_map<std::string, void(*)(Value &, const Value &)> operations {
+            {"+", &add},
+            {"-", &minus},
+            {">", &greaterThan},
+            {"<", &lessThan}
+        };
+        Value left = leftOperand_->calculate(interpreter);
+        Value right = rightOperand_->calculate(interpreter);
+        operations.at(std::get<std::string>(operator_.value))(left, right);
+        return left;
+    }
 
     std::string getRPN() const override {
         std::ostringstream os;

@@ -25,8 +25,8 @@ public:
         numerator_.insert({ unitToken.unit, unitToken });
     }
     
-    Unit(Unit &&) = default;
-    Unit& operator=(Unit &&) = default;
+    //Unit(Unit &&) = default;
+    //Unit& operator=(Unit &&) = default;
     
     /*TypeClass getTypeClass() const override {
         return TypeClass::UNIT;
@@ -50,6 +50,22 @@ public:
         std::ostringstream os;
         os << *this;
         return os.str();
+    }
+    
+    bool isAddCompatibileWith(const Unit &other) const {
+        auto areUnitsCompatibile = [](const std::pair<UnitType, ::Unit> &left, const std::pair<UnitType, ::Unit> &right) {
+                return std::make_pair(left.second.unit, left.second.power) == std::make_pair(right.second.unit, right.second.power);
+            };
+        return
+            std::equal(numerator_.cbegin(), numerator_.cend(),
+                other.numerator_.cbegin(), other.numerator_.cend(),
+                areUnitsCompatibile
+            )
+            &&
+            std::equal(denominator_.cbegin(), denominator_.cend(),
+                other.denominator_.cbegin(), other.denominator_.cend(),
+                areUnitsCompatibile
+            );
     }
 
 private:

@@ -17,6 +17,10 @@ public:
         return name_;
     }
     
+    const Type2& getType() const {
+        return type_;
+    }
+    
     std::string toString() const {
         return name_ + type_.toString();
     }

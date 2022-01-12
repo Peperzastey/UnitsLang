@@ -21,6 +21,10 @@ const std::unordered_map<std::string, Token> tokens {
     { "++"       , {TokenType::OP_SUFFIX          , "++"} },
     { "--"       , {TokenType::OP_SUFFIX          , "--"} },
     { "="        , {TokenType::ASSIGN             , ""  } },
+    { "<"        , {TokenType::OP_REL             , "<" } },
+    { "<="       , {TokenType::OP_REL             , "<="} },
+    { ">"        , {TokenType::OP_REL             , ">" } },
+    { ">="       , {TokenType::OP_REL             , ">="} },
     { "("        , {TokenType::PAREN_OPEN         , ""  } },
     { ")"        , {TokenType::PAREN_CLOSE        , ""  } },
     { "{"        , {TokenType::BRACKET_OPEN       , ""  } },
@@ -118,6 +122,22 @@ TEST(ParserTests, ComplexCalculation) {
     EXPECT_EQ(expectedRPN, expr->getRPN());
 }
 
+TEST(ParserTests, BoolValuesExpressions) {
+    std::array inputs {
+        "true",
+        "false"
+    };
+
+    for (const auto &str : inputs) {
+        MockLexer lexer(str);
+        TestParser parser(lexer);
+        parser.advance();
+        std::unique_ptr<Expression> expr = parser.parseExpression();
+        ASSERT_NE(nullptr, expr);
+        EXPECT_EQ(str, expr->getRPN());
+    }
+}
+
 TEST(ParserTests, InstructionExpectsEndOfInstructionToken) {
     std::vector<std::string> incorrectInputs {
         "break",
@@ -188,13 +208,13 @@ TEST(ParserTests, ReturnWithInvalidExpressionFails) {
     );
 }
 
-TEST(ParserTests, VarDef) {
+TEST(ParserTests, VarDefOrAssignment) {
     std::string input = "a = 1 + 1 \n";
     MockLexer lexer(input);
     TestParser parser(lexer);
     parser.advance();
     std::unique_ptr<Instruction> instr = parser.parseInstruction();
-    VarDef *varDef = dynamic_cast<VarDef *>(instr.get());
+    VarDefOrAssignment *varDef = dynamic_cast<VarDefOrAssignment *>(instr.get());
     ASSERT_NE(nullptr, varDef);
 }
 

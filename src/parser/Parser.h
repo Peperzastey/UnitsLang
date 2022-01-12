@@ -4,8 +4,9 @@
 #include "lexer/Lexer.h"
 #include "codeObjects/Program.h"
 #include "codeObjects/Instruction.h"
+#include "codeObjects/InstructionBlock.h"
 #include "codeObjects/FuncCall.h"
-#include "codeObjects/VarDef.h"
+#include "codeObjects/VarDefOrAssignment.h"
 #include "codeObjects/Expression.h"
 #include "codeObjects/BinaryExpression.h"
 #include "codeObjects/If.h"
@@ -28,8 +29,9 @@ protected:
     void advance();
     std::unique_ptr<FuncDef> parseFuncDef();
     std::unique_ptr<Instruction> parseInstruction();
-    std::vector<std::unique_ptr<Instruction>> parseInstructionBlock();
+    std::unique_ptr<InstructionBlock> parseInstructionBlock();
     std::unique_ptr<Expression> parseExpression();
+    std::unique_ptr<Expression> parseRelExpression();
     std::unique_ptr<Expression> parseAddExpression();
     std::unique_ptr<Expression> parseMultExpression();
     std::unique_ptr<Expression> parseExpressionElement();
@@ -43,7 +45,7 @@ protected:
     std::optional<Variable> parseFuncParameter();
 
     std::unique_ptr<FuncCall> tryParseFuncCall(Token id);
-    std::unique_ptr<VarDef> tryParseVarDef(Token id);
+    std::unique_ptr<VarDefOrAssignment> tryParseVarDefOrAssignment(Token id);
     std::unique_ptr<If> tryParseIfInstr();
     std::unique_ptr<While> tryParseWhileInstr();
     

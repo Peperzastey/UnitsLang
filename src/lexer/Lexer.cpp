@@ -158,7 +158,6 @@ Token Lexer::getToken() {
             return { TokenType::END_OF_STREAM, "" };
         default:
             ErrorHandler::handleFromLexer("Unknown lexem");
-            return { TokenType::INVALID_TOKEN, "" };
     }
 }
 
@@ -183,7 +182,7 @@ Token Lexer::constructAssignOrEq([[maybe_unused]] char c) {
     assert(c == '=');
     char nextCh = source_.getChar();
     if (nextCh == '=') {
-        return { TokenType::OP_REL, "==" };
+        return { TokenType::OP_EQ, "==" };
     }
     source_.ungetChar(nextCh);
     return { TokenType::ASSIGN, "" };
@@ -203,7 +202,7 @@ Token Lexer::constructNotEq(char c) {
     if (c != '=') {
         ErrorHandler::handleFromLexer("'!' not followed by '='!");
     }
-    return { TokenType::OP_REL, "!=" };
+    return { TokenType::OP_EQ, "!=" };
 }
 
 Token Lexer::constructString(char c) {

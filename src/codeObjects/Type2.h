@@ -19,8 +19,8 @@ public:
     Type2(TypeClass typeClass = TypeClass::VOID) : unit_(), type_(typeClass) {}
     Type2(codeobj::Unit &&unit) : unit_(std::move(unit)), type_(NUMBER) {}
     
-    Type2(Type2 &&) = default;
-    Type2& operator=(Type2 &&) = default;
+    //Type2(Type2 &&) = default;
+    //Type2& operator=(Type2 &&) = default;
 
     TypeClass getTypeClass() const noexcept {
         return type_;
@@ -42,6 +42,14 @@ public:
             case STRING:
                 return "[str]";
         }
+    }
+    
+    bool operator==(const Type2 &other) const {
+        return type_ == other.type_ && unit_.isAddCompatibileWith(other.unit_);
+    }
+    
+    bool operator!=(const Type2 &other) const {
+        return !(*this == other);   
     }
     /*bool isUnit() const {
         return std::holds_alternative<codeobj::Unit>(value);

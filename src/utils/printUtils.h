@@ -26,6 +26,7 @@ inline std::ostream& operator<<(std::ostream &os, TokenType tokenType) {
         "OP_MULT",
         "OP_ADD",
         "OP_SUFFIX",
+        "OP_EQ",
         "OP_REL",
         "ASSIGN",
         "PAREN_OPEN",
@@ -38,8 +39,7 @@ inline std::ostream& operator<<(std::ostream &os, TokenType tokenType) {
         "FUNC_RESULT",
         "STRING",
         "END_OF_INSTRUCTION",
-        "END_OF_STREAM",
-        "INVALID_TOKEN"
+        "END_OF_STREAM"
     };
     return os << typeNames[static_cast<int>(tokenType)];
 }
