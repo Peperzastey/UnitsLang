@@ -15,6 +15,8 @@ struct Value : public Expression {
     }
     Value(bool value)
         : value(value), type(Type2::BOOL) {}
+    Value(std::string value)
+        : value(std::move(value)), type(Type2::STRING) {}
         
     Value calculate([[maybe_unused]] Interpreter &interpreter) override {
         return *this;
@@ -28,13 +30,15 @@ struct Value : public Expression {
         std::ostringstream os;
 
         if (std::holds_alternative<double>(value)) {
-            os << std::get<double>(value);
+            os << asDouble();
             const codeobj::Unit &unit = type.asUnit();
             if (!unit.isScalar()) {
                 os << unit;
             }
-        } else {
-            os << (std::get<bool>(value) ? "true" : "false");
+        } else if (std::holds_alternative<bool>(value)) {
+            os << (asBool() ? "true" : "false");
+        } else { // string
+            os << asString();
         }
 
         return os.str();
@@ -48,6 +52,10 @@ struct Value : public Expression {
         return std::get<bool>(value);
     }
     
+    const std::string& asString() const {
+        return std::get<std::string>(value);
+    }
+    
     bool operator==(const Value &other) const {
         return value == other.value && type == other.type;
     }
@@ -56,7 +64,7 @@ struct Value : public Expression {
         return !(*this == other);
     }
     
-    std::variant<double, bool> value;
+    std::variant<double, bool, std::string> value;
     Type2 type;
 };
 

@@ -18,9 +18,6 @@ public:
 public:
     Type2(TypeClass typeClass = TypeClass::VOID) : unit_(), type_(typeClass) {}
     Type2(codeobj::Unit &&unit) : unit_(std::move(unit)), type_(NUMBER) {}
-    
-    //Type2(Type2 &&) = default;
-    //Type2& operator=(Type2 &&) = default;
 
     TypeClass getTypeClass() const noexcept {
         return type_;
@@ -29,6 +26,10 @@ public:
     const codeobj::Unit& asUnit() const {
         assert(type_ == NUMBER);
         return unit_;
+    }
+    
+    codeobj::Unit& asUnit() {
+        return const_cast<codeobj::Unit &>(std::as_const(*this).asUnit());
     }
     
     std::string toString() const {
@@ -51,24 +52,8 @@ public:
     bool operator!=(const Type2 &other) const {
         return !(*this == other);   
     }
-    /*bool isUnit() const {
-        return std::holds_alternative<codeobj::Unit>(value);
-    }
-    bool isScalar() const {
-        return isUnit() && std::get<codeobj::Unit>(value).isScalar();
-    }
-    bool isBool() const {
-        return std::holds_alternative<bool>(value);
-    }
-    bool isVoid() const {
-        return std::holds_alternative<std::monostate>(value);
-    }
-    bool isString() const {
-        return std::holds_alternative<std::string>(value);
-    }*/
     
 private:
-    //std::variant<std::monostate, codeobj::Unit, bool, std::string> value;
     codeobj::Unit unit_;
     TypeClass type_;
 };

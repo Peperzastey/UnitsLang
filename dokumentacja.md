@@ -205,7 +205,8 @@ oznaczenie_jednostki                    = '[', jednostka, ']' ;
 
 typ                                     = jednostka | skalar | 'bool' | 'str' ;
 
-wyrażenie                               = wyrażenie_log_and, { or_op, wyrażenie_log_and } ;
+wyrażenie                               = wyrażenie_log_and, { or_op, wyrażenie_log_and }
+                                        | string ;
 
 wyrażenie_log_and                       = wyrażenie_log_eq, { and_op, wyrażenie_log_eq } ;
 
@@ -266,10 +267,11 @@ wywołanie_funkcji                       = id, '(', lista_argumentów ,')' ;
 
 lista_argumentów                        = [ argument, { ',', argument } ] ;
 
-argument                                = wyrażenie
-                                        | string ;
+argument                                = wyrażenie ;
 
-string                                  = ciąg_znaków_w_cudzysłowach, { ciąg_znaków_w_cudzysłowach } ;
+string                                  = ciąg_znaków_w_cudzysłowach ;
+
+//string                                  = ciąg_znaków_w_cudzysłowach, { ciąg_znaków_w_cudzysłowach } ;
 
 ciąg_znaków_w_cudzysłowach              = '"', { znak - '"' | escapowany_cudzysłów | odwołanie_do_zmiennej }, '"' ;
 

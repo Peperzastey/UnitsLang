@@ -1,18 +1,34 @@
 #ifndef TKOMSIUNITS_CODE_OBJECTS_STRING_H_INCLUDED
 #define TKOMSIUNITS_CODE_OBJECTS_STRING_H_INCLUDED
 
-#include <string>
+#include "Expression.h"
+#include "Value.h"
+#include <memory>
+#include <vector>
 
-class String {
+namespace codeobj {
+
+class String : public Expression {
 public:
-    String(std::string &&value) : value_(std::move(value)) {}
+    String(std::vector<std::unique_ptr<Expression>> &&parts)
+        : parts_(std::move(parts)) {}
     
-    std::string toString() const {
-        return value_;
+    Value calculate([[maybe_unused]] Interpreter &interpreter) override {
+        std::string value;
+        for (auto &&part : parts_) {
+            value += part->calculate(interpreter).toString();
+        }
+        return Value(std::move(value));
+    }
+    
+    std::string getRPN() const override {
+        return "<str>";
     }
 
 private:
-    std::string value_;
+    std::vector<std::unique_ptr<Expression>> parts_;
 };
+
+} // namespace codeobj
 
 #endif // TKOMSIUNITS_CODE_OBJECTS_STRING_H_INCLUDED

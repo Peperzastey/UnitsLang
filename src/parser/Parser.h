@@ -15,6 +15,7 @@
 #include "codeObjects/Type.h"
 #include "codeObjects/Type2.h"
 #include "codeObjects/Variable.h"
+#include "codeObjects/String.h"
 #include <memory>
 #include <optional>
 
@@ -31,13 +32,16 @@ protected:
     std::unique_ptr<Instruction> parseInstruction();
     std::unique_ptr<InstructionBlock> parseInstructionBlock();
     std::unique_ptr<Expression> parseExpression();
+    std::unique_ptr<Expression> parseEqualExpression();
     std::unique_ptr<Expression> parseRelExpression();
     std::unique_ptr<Expression> parseAddExpression();
     std::unique_ptr<Expression> parseMultExpression();
     std::unique_ptr<Expression> parseExpressionElement();
+    std::unique_ptr<codeobj::String> parseString();
 
     codeobj::Unit parseUnit();
-    codeobj::Unit parseUnitTokens();
+    codeobj::Unit parseComplexUnitTokens();
+    codeobj::Unit parseUnitElementTokens();
     std::optional<Type2> parseType();
     Type2 parseTypeTokens();
     //std::unique_ptr<codeObj::Unit> parseUnitExpressionElement()

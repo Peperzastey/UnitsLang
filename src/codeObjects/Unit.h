@@ -32,15 +32,65 @@ public:
         return TypeClass::UNIT;
     }*/
 
-    /*void addUnitComponent(Token op, Unit &&unit) {
+
+    void combineWithUnit(Token op, const Unit &unit) {
         if (std::get<std::string>(op.value) == "*") {
-            //if (auto it = numerator_.find())
+            for (auto &&num : unit.numerator_) {
+                if (auto it = numerator_.find(num.first); it != numerator_.end()) {
+                    if (it->second.prefix != num.second.prefix) {
+                        ErrorHandler::handleFromParser("Cannot combine units with different prefixes");
+                    }
+                    it->second.power += num.second.power;
+                } else {
+                    numerator_.insert(num);
+                }
+            }
+            for (auto &&den : unit.denominator_) {
+                if (auto it = denominator_.find(den.first); it != denominator_.end()) {
+                    if (it->second.prefix != den.second.prefix) {
+                        ErrorHandler::handleFromParser("Cannot combine units with different prefixes");
+                    }
+                    it->second.power += den.second.power;
+                } else {
+                    denominator_.insert(den);
+                }
+            }
+            reduceFraction();
         } else if (std::get<std::string>(op.value) == "/") {
-            
+            for (auto &&num : unit.numerator_) {
+                if (auto it = denominator_.find(num.first); it != denominator_.end()) {
+                    if (it->second.prefix != num.second.prefix) {
+                        ErrorHandler::handleFromParser("Cannot combine units with different prefixes");
+                    }
+                    it->second.power += num.second.power;
+                } else {
+                    denominator_.insert(num);
+                }
+            }
+            for (auto &&den : unit.denominator_) {
+                if (auto it = numerator_.find(den.first); it != numerator_.end()) {
+                    if (it->second.prefix != den.second.prefix) {
+                        ErrorHandler::handleFromParser("Cannot combine units with different prefixes");
+                    }
+                    it->second.power += den.second.power;
+                } else {
+                    numerator_.insert(den);
+                }
+            }
+            reduceFraction();
         } else {
             ErrorHandler::handleFromParser("Multiplicative operator different than '*' and '/'");
         }
-    }*/
+        
+    }
+    
+    //TODO set (in object) multiplier from prefix changes
+    void multWithUnit(const Unit &unit) {
+        combineWithUnit(Token{TokenType::OP_MULT, "*"}, unit);
+    }
+    void divWithUnit(const Unit &unit) {
+        combineWithUnit(Token{TokenType::OP_MULT, "/"}, unit);
+    }
     
     bool isScalar() const noexcept {
         return isScalar_;
@@ -69,6 +119,45 @@ public:
     }
 
 private:
+    void updateIsScalar() {
+        if (numerator_.empty() && denominator_.empty()) {
+            isScalar_ = true;
+        } else {
+            isScalar_ = false;
+        }
+    }
+
+    void reduceFraction() {
+        // reduce same units in numerator and denominator
+        for (auto numIt = numerator_.begin(); numIt != numerator_.end();) {
+            if (auto denIt = denominator_.find(numIt->first); denIt != denominator_.end()) {
+                ::Unit &top = numIt->second;
+                ::Unit &bottom = denIt->second;
+                if (top.prefix != bottom.prefix) {
+                    //TODO prefixes
+                    ErrorHandler::handleFromParser("Cannot combine units with different prefixes");
+                }
+                top.power -= bottom.power;
+                if (top.power < 0) {
+                    bottom.power = -top.power;
+                    numIt = numerator_.erase(numIt);
+                } else {
+                    denominator_.erase(denIt);
+                    if (top.power == 0) {
+                        numIt = numerator_.erase(numIt);
+                    } else {
+                        ++numIt;
+                    }
+                }
+            } else {
+                ++numIt;
+            }
+        }
+        updateIsScalar();
+    }
+
+private:
+    // map beceuse the elements have to be ordered
     std::map<UnitType, ::Unit> numerator_;
     std::map<UnitType, ::Unit> denominator_;
     bool isScalar_;

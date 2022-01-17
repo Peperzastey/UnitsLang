@@ -2,6 +2,7 @@
 #define TKOMSIUNITS_CODE_OBJECTS_PROGRAM_H_INCLUDED
 
 #include "InstructionBlock.h"
+#include "InternalPrintInstr.h"
 #include "FuncDef.h"
 #include "Value.h"
 #include "error/ErrorHandler.h"
@@ -19,10 +20,10 @@ public:
     Program(std::vector<std::unique_ptr<FuncDef>> &&funcDefs,
             std::vector<std::unique_ptr<Instruction>> &&instructions)
             : instructions_(std::move(instructions)) {
+        addPredefinedPrintFunc();
         for (auto &&func : funcDefs) {
             addFuncDef(std::move(func));
             //TODO add function main() from instructions
-            //TODO add pre-defined function print()
         }
     }
     
@@ -59,6 +60,21 @@ private:
             os << "Redefinition of function named '" << name << "'";
             ErrorHandler::handleFromCodeObject(os.str());
         }
+    }
+    
+    void addPredefinedPrintFunc() {
+        std::vector<std::unique_ptr<Instruction>> printInstructions;
+        printInstructions.emplace_back(std::make_unique<InternalPrintInstr>("_"));
+        auto printFuncInstrBlock = std::make_unique<InstructionBlock>(
+                std::move(printInstructions)
+            );
+        auto printFuncDef = std::make_unique<FuncDef>(
+                "print",
+                std::vector{ Variable{"_", Type2::STRING} },
+                Type2::VOID,
+                std::move(printFuncInstrBlock)
+            );
+        addFuncDef(std::move(printFuncDef));
     }
 
 private:

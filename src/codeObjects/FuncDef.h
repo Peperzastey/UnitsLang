@@ -8,10 +8,10 @@
 #include "error/ErrorHandler.h"
 #include <memory>
 #include <optional>
-#include <unordered_map>
+#include <set>
 #include <vector>
 #include <functional>
-#include <string>
+#include <string_view>
 
 class FuncDef {
 public:
@@ -22,33 +22,28 @@ public:
             std::unique_ptr<InstructionBlock> &&body
         )
         : name_(name)
+        , params_(std::move(params))
         , returnType_(std::move(returnType))
         , body_(std::move(body)) {
-        for (auto &&param : params) {
-            std::string name = param.getName();
-            auto [iter, success] = params_.insert({ name, std::move(param) });
-            if (!success) {
+        std::set<std::string_view> paramNames;
+        for (auto &&param : params_) {
+            auto result = paramNames.insert(param.getName());
+            if (!result.second) {
                 ErrorHandler::handleFromCodeObject(
                     "Parameter duplicate (param name: '" + name + "') in definition of function '" + name_ + "'"
                 );
             }
-            paramsOrder_.push_back(iter->second);
         }
     }
     
     std::optional<Value> call(Interpreter &interpreter, std::vector<Value> &&args) const;
     
-    const std::string& getInstrType() const {
-        static const std::string INSTR_TYPE = "FuncDef";
-        return INSTR_TYPE;
-    }
-    
     std::string toString() const {
         std::string output = name_ + '(';
-        if (!paramsOrder_.empty()) {
-            output += paramsOrder_.front().get().toString();
-            for (auto it = paramsOrder_.cbegin() + 1; it != paramsOrder_.cend(); ++it) {
-                output += ',' + it->get().toString();
+        if (!params_.empty()) {
+            output += params_.front().toString();
+            for (auto it = params_.cbegin() + 1; it != params_.cend(); ++it) {
+                output += ',' + it->toString();
             }  
         }
         output += ')';
@@ -68,8 +63,7 @@ public:
     
 private:
     const std::string name_;
-    std::unordered_map<std::string, Variable> params_;
-    std::vector<std::reference_wrapper<const Variable>> paramsOrder_;
+    std::vector<Variable> params_;
     Type2 returnType_;
     std::unique_ptr<InstructionBlock> body_;
 };

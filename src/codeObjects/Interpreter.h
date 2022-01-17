@@ -56,8 +56,9 @@ struct FuncCallContext {
 //TODO rename ExecutionContext
 class Interpreter {
 public:
-    Interpreter(Program &programToExecute)
-        : program_(programToExecute) {}
+    Interpreter(std::ostream &stdout, Program &programToExecute)
+        : stdout_(stdout)
+        , program_(programToExecute) {}
     
     int executeProgram() {
         newFuncCallContext();
@@ -188,8 +189,17 @@ public:
     FuncCallContext::Scope& getGlobalScope() {
         return const_cast<FuncCallContext::Scope &>(std::as_const(*this).getGlobalScope());
     }
+    
+    std::ostream& getStdout() {
+        return stdout_;
+    }
+    
+    void printLineToStdout(const std::string &text) {
+        stdout_ << text << std::endl;
+    }
 
 private:
+    std::ostream &stdout_;
     Program &program_;
     // explicitly use std::deque because it guarantees stable references to elements
     std::stack<FuncCallContext, std::deque<FuncCallContext>> fccStack_;
@@ -197,6 +207,7 @@ private:
     // empty optional means void
     std::optional<Value> returnValue_;
     //TODO stack of FuncCallContext-s with Scope chains inside
+    
 };
 
 #endif // TKOMSIUNITS_CODE_OBJECTS_INTERPRETER_H_INCLUDED

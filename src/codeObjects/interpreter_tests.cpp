@@ -39,7 +39,7 @@ TEST(InterpreterTests, VarDefinition) {
     Lexer lexer(*src);
     Parser parser(lexer);
     std::unique_ptr<Program> program = parser.parse();
-    Interpreter interp(*program.get());
+    Interpreter interp(std::cout, *program.get());
     int result = interp.executeProgram();
     EXPECT_EQ(0, result);
     /*EXPECT_EQ(Value(3.0, codeobj::Unit(resultUnit)), interp.getVariable(varName));*/
@@ -53,7 +53,7 @@ TEST(InterpreterTests, VarDefinitionWithTypeDecl) {
     Lexer lexer(*src);
     Parser parser(lexer);
     std::unique_ptr<Program> program = parser.parse();
-    Interpreter interp(*program.get());
+    Interpreter interp(std::cout, *program.get());
     int result = interp.executeProgram();
     EXPECT_EQ(0, result);
     /*EXPECT_EQ(Value(3.0, codeobj::Unit(resultUnit)), interp.getVariable(varName));*/
@@ -68,7 +68,7 @@ TEST(InterpreterTests, VarAssignment) {
     Lexer lexer(*src);
     Parser parser(lexer);
     std::unique_ptr<Program> program = parser.parse();
-    Interpreter interp(*program.get());
+    Interpreter interp(std::cout, *program.get());
     int result = interp.executeProgram();
     EXPECT_EQ(0, result);
     /*EXPECT_EQ(Value(45.0, codeobj::Unit(resultUnit)), interp.getVariable(varName));*/
@@ -81,7 +81,7 @@ TEST(InterpreterTests, IfTrue) {
     Lexer lexer(*src);
     Parser parser(lexer);
     std::unique_ptr<Program> program = parser.parse();
-    Interpreter interp(*program.get());
+    Interpreter interp(std::cout, *program.get());
     int result = interp.executeProgram();
     EXPECT_EQ(0, result);
     /*EXPECT_EQ(Value(5, codeobj::Unit(resultUnit)), interp.getVariable("a"));*/
@@ -93,7 +93,7 @@ TEST(InterpreterTests, IfFalseElse) {
     Lexer lexer(*src);
     Parser parser(lexer);
     std::unique_ptr<Program> program = parser.parse();
-    Interpreter interp(*program.get());
+    Interpreter interp(std::cout, *program.get());
     int result = interp.executeProgram();
     EXPECT_EQ(0, result);
     /*EXPECT_EQ(Value(0, codeobj::Unit()), interp.getVariable("a"));*/
@@ -105,7 +105,7 @@ TEST(InterpreterTests, IfElifChainExecutesFirstTrueElif) {
     Lexer lexer(*src);
     Parser parser(lexer);
     std::unique_ptr<Program> program = parser.parse();
-    Interpreter interp(*program.get());
+    Interpreter interp(std::cout, *program.get());
     int result = interp.executeProgram();
     EXPECT_EQ(0, result);
     /*EXPECT_EQ(Value(3, codeobj::Unit()), interp.getVariable("a"));*/
@@ -117,7 +117,7 @@ TEST(InterpreterTests, IfFalseElifFalseChainExecutesElse) {
     Lexer lexer(*src);
     Parser parser(lexer);
     std::unique_ptr<Program> program = parser.parse();
-    Interpreter interp(*program.get());
+    Interpreter interp(std::cout, *program.get());
     int result = interp.executeProgram();
     EXPECT_EQ(0, result);
     /*EXPECT_EQ(Value(2, codeobj::Unit()), interp.getVariable("b"));
@@ -130,7 +130,7 @@ TEST(InterpreterTests, VarReference) {
     Lexer lexer(*src);
     Parser parser(lexer);
     std::unique_ptr<Program> program = parser.parse();
-    Interpreter interp(*program.get());
+    Interpreter interp(std::cout, *program.get());
     int result = interp.executeProgram();
     EXPECT_EQ(0, result);
     /*EXPECT_EQ(Value(false), interp.getVariable("a"));*/
@@ -145,7 +145,7 @@ TEST(InterpreterTests, While) {
     Lexer lexer(*src);
     Parser parser(lexer);
     std::unique_ptr<Program> program = parser.parse();
-    Interpreter interp(*program.get());
+    Interpreter interp(std::cout, *program.get());
     int result = interp.executeProgram();
     EXPECT_EQ(0, result);
     /*EXPECT_EQ(Value(0, codeobj::Unit()), interp.getVariable("a"));
@@ -163,7 +163,7 @@ TEST(InterpreterTests, WhileBreak) {
     Lexer lexer(*src);
     Parser parser(lexer);
     std::unique_ptr<Program> program = parser.parse();
-    Interpreter interp(*program.get());
+    Interpreter interp(std::cout, *program.get());
     int result = interp.executeProgram();
     EXPECT_EQ(0, result);
     /*EXPECT_EQ(Value(1, codeobj::Unit()), interp.getVariable("a"));
@@ -183,7 +183,7 @@ TEST(InterpreterTests, WhileContinue) {
     Lexer lexer(*src);
     Parser parser(lexer);
     std::unique_ptr<Program> program = parser.parse();
-    Interpreter interp(*program.get());
+    Interpreter interp(std::cout, *program.get());
     int result = interp.executeProgram();
     EXPECT_EQ(0, result);
     /*EXPECT_EQ(Value(0, codeobj::Unit()), interp.getVariable("a"));
@@ -202,10 +202,155 @@ TEST(InterpreterTests, WhileReturn) {
     Lexer lexer(*src);
     Parser parser(lexer);
     std::unique_ptr<Program> program = parser.parse();
-    Interpreter interp(*program.get());
+    Interpreter interp(std::cout, *program.get());
     int result = interp.executeProgram();
     EXPECT_EQ(2, result);
     /*EXPECT_EQ(Value(1, codeobj::Unit()), interp.getVariable("a"));
     EXPECT_EQ(Value(2, codeobj::Unit()), interp.getVariable("b"));
     EXPECT_EQ(std::nullopt, interp.getVariable("c"));*/
+}
+
+TEST(InterpreterTests, FunctionRecursionFibonacci) {
+    std::string input =
+        "func fibonacci (steps [1]) -> [m] {"
+        "    if steps == 0 {"
+        "        return 0[m]\n"
+        "    } elif steps == 1 {"
+        "        return 1[m]\n"
+        "    } else {"
+        "        return fibonacci(steps - 1) + fibonacci(steps - 2)\n"
+        "    }\n"
+        "}\n"
+        "if fibonacci(20) == 6 765[m] {"
+        "    return 20\n"
+        "}\n"
+        "return 1\n";
+    std::unique_ptr<Source> src = std::make_unique<StringSource>(input);
+    Lexer lexer(*src);
+    Parser parser(lexer);
+    std::unique_ptr<Program> program = parser.parse();
+    Interpreter interp(std::cout,  *program.get());
+    int result = interp.executeProgram();
+    EXPECT_EQ(20, result);
+}
+
+TEST(InterpreterTests, FunctionFibonacciIterative) {
+    std::string input =
+        "func fibonacci_iterative (steps [1]) -> [1] {"
+        "    elem0 = 0\n"
+        "    elem1 = 1\n"
+        "    count = 1\n"
+        "    while count < steps {"
+        "        elem1 = elem1 + elem0\n"
+        "        elem0 = elem1 - elem0\n"
+        "        count = count + 1\n"
+        "    }\n"
+        "    return elem1\n"
+        "}\n"
+        "if fibonacci_iterative(20) == 6765 {"
+        "    return 20\n"
+        "}\n"
+        "return 1\n";
+    std::unique_ptr<Source> src = std::make_unique<StringSource>(input);
+    Lexer lexer(*src);
+    Parser parser(lexer);
+    std::unique_ptr<Program> program = parser.parse();
+    Interpreter interp(std::cout,  *program.get());
+    int result = interp.executeProgram();
+    EXPECT_EQ(20, result);
+}
+
+TEST(InterpreterTests, Print) {
+    std::string input =
+        "print(\"Ala ma kota\")\n";
+    std::string expectedOutput = "Ala ma kota\n";
+    std::stringstream testStdout;
+    std::unique_ptr<Source> src = std::make_unique<StringSource>(input);
+    Lexer lexer(*src);
+    Parser parser(lexer);
+    std::unique_ptr<Program> program = parser.parse();
+    Interpreter interp(testStdout,  *program.get());
+    int result = interp.executeProgram();
+    EXPECT_EQ(0, result);
+    EXPECT_EQ(expectedOutput, testStdout.str());
+}
+
+TEST(InterpreterTests, PrintStringVariable) {
+    std::string input =
+        "a[str] = \"Kot ma Ale\"\n"
+        "print(a)\n";
+    std::string expectedOutput = "Kot ma Ale\n";
+    std::stringstream testStdout;
+    std::unique_ptr<Source> src = std::make_unique<StringSource>(input);
+    Lexer lexer(*src);
+    Parser parser(lexer);
+    std::unique_ptr<Program> program = parser.parse();
+    Interpreter interp(testStdout,  *program.get());
+    int result = interp.executeProgram();
+    EXPECT_EQ(0, result);
+    EXPECT_EQ(expectedOutput, testStdout.str());
+}
+
+TEST(InterpreterTests, FormattedString) {
+    std::string input =
+        "a = 15.3[m/s2]\n"
+        "print(\"a = {a}\")\n";
+    std::string expectedOutput = "a = 15.3[(m)/(s2)]\n";
+    std::stringstream testStdout;
+    std::unique_ptr<Source> src = std::make_unique<StringSource>(input);
+    Lexer lexer(*src);
+    Parser parser(lexer);
+    std::unique_ptr<Program> program = parser.parse();
+    Interpreter interp(testStdout,  *program.get());
+    int result = interp.executeProgram();
+    EXPECT_EQ(0, result);
+    EXPECT_EQ(expectedOutput, testStdout.str());
+}
+
+TEST(InterpreterTests, ComplexUnitEquality) {
+    std::string input =
+        "a = 5[kg/(m*s2)]\n"
+        "b = 5[kg/m/s/s]\n"
+        "if a != b {"
+        "    return 2\n"
+        "}\n";
+    std::unique_ptr<Source> src = std::make_unique<StringSource>(input);
+    Lexer lexer(*src);
+    Parser parser(lexer);
+    std::unique_ptr<Program> program = parser.parse();
+    Interpreter interp(std::cout,  *program.get());
+    int result = interp.executeProgram();
+    EXPECT_EQ(0, result);
+}
+
+TEST(InterpreterTests, DividingUnitsCreatesNewUnit) {
+    std::string input =
+        "a = 5[m]\n"
+        "b = 2[s]\n"
+        "if a/b != 2.5[m/s] {"
+        "    return 2\n"
+        "}\n";
+    std::unique_ptr<Source> src = std::make_unique<StringSource>(input);
+    Lexer lexer(*src);
+    Parser parser(lexer);
+    std::unique_ptr<Program> program = parser.parse();
+    Interpreter interp(std::cout,  *program.get());
+    int result = interp.executeProgram();
+    EXPECT_EQ(0, result);
+}
+
+TEST(InterpreterTests, MultiplicatingUnitsCreatesNewUnit) {
+    std::string input =
+        "a = 5[m]\n"
+        "b = 2[kg/s]\n"
+        "if a*b != 10[m*kg/s] {"
+        "    return 2\n"
+        "}\n";
+    std::unique_ptr<Source> src = std::make_unique<StringSource>(input);
+    Lexer lexer(*src);
+    Parser parser(lexer);
+    std::unique_ptr<Program> program = parser.parse();
+    Interpreter interp(std::cout,  *program.get());
+    int result = interp.executeProgram();
+    EXPECT_EQ(0, result);
 }

@@ -5,6 +5,7 @@ if(BUILD_TESTING)
         Program.cpp
         FuncDef.cpp
         InstructionBlock.cpp
+        InternalPrintInstr.cpp
     )
 
     target_link_libraries(CodeObjectsTests
@@ -25,6 +26,7 @@ if(BUILD_TESTING)
         Program.cpp
         FuncDef.cpp
         InstructionBlock.cpp
+        InternalPrintInstr.cpp
         ../lexer/Lexer.cpp
         ../source/Source.cpp
         ../source/StringSource.cpp

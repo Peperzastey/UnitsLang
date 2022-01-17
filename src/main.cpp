@@ -30,8 +30,14 @@ int main(int argc, char** argv) {
         return 1;
     }
     return result;*/
-    
-    std::unique_ptr<Program> program = parser.parse();
-    Interpreter interp(*program.get());
+
+    std::unique_ptr<Program> program = nullptr;
+    try {
+        program = parser.parse();
+    } catch (const std::exception &ex) {
+        std::cerr << ex.what() << std::endl;
+        return 1;
+    }
+    Interpreter interp(std::cout, *program.get());
     return interp.executeProgram();
 }

@@ -1,5 +1,7 @@
 #include "Lexer.h"
 #include "error/ErrorHandler.h"
+#include "error/LexerError.h"
+#include "error/UnknownLexemeError.h"
 #include <cassert>
 #include <cctype>
 #include <stdexcept>
@@ -97,6 +99,10 @@ void Lexer::discardInstrBreak() {
 
 bool Lexer::consumeNewline(char c) {
     bool gotR = false;
+    if (c == EOF) {
+        //TODO? unget
+        return true;
+    }
     if (c == '\r') {
         gotR = true;
         c = source_.getChar();
@@ -112,132 +118,190 @@ bool Lexer::consumeNewline(char c) {
 
 Token Lexer::getToken() {
     char c = discardWhitespacesAndComments();
+    PosInStream charPos = source_.getCurrentPosition();
     
     if (isalpha(c) || c == '_') {
-        return constructIdOrUnitOrKeyword(c);
+        return constructIdOrUnitOrKeyword(c, charPos);
     }
 
     if (isdigit(c)) {
-        return constructNumber(c);
+        return constructNumber(c, charPos);
     }
 
     switch (c) {
         case '\r':
         case '\n':
-            return constructEndOfInstr(c);
+            return constructEndOfInstr(c, charPos);
         case '/':
         case '*':
-            return { TokenType::OP_MULT, std::string{c} };
+            return { TokenType::OP_MULT, std::string{c}, charPos };
         case '+':
         case '-':
-            return constructAdditiveOpOrFuncResult(c);
+            return constructAdditiveOpOrFuncResult(c, charPos);
         case '=':
-            return constructAssignOrEq(c);
+            return constructAssignOrEq(c, charPos);
         case '>':
         case '<':
-            return constructRelationalOp(c);
+            return constructRelationalOp(c, charPos);
         case '!':
-            return constructNotEq(c);
+            return constructNotEq(c, charPos);
         case '"':
-            return constructString(c);
+            return constructString(c, charPos);
         case '(':
-            return { TokenType::PAREN_OPEN, "" };
+            return { TokenType::PAREN_OPEN, "", charPos };
         case ')':
-            return { TokenType::PAREN_CLOSE, "" };
+            return { TokenType::PAREN_CLOSE, "", charPos };
         case '{':
-            return { TokenType::BRACKET_OPEN, "" };
+            return { TokenType::BRACKET_OPEN, "", charPos };
         case '}':
-            return { TokenType::BRACKET_CLOSE, "" };
+            return { TokenType::BRACKET_CLOSE, "", charPos };
         case '[':
-            return { TokenType::SQUARE_OPEN, "" };
+            return { TokenType::SQUARE_OPEN, "", charPos };
         case ']':
-            return { TokenType::SQUARE_CLOSE, "" };
+            return { TokenType::SQUARE_CLOSE, "", charPos };
         case ',':
-            return { TokenType::COMMA, "" };
+            return { TokenType::COMMA, "", charPos };
         case EOF:
-            return { TokenType::END_OF_STREAM, "" };
-        default:
-            ErrorHandler::handleFromLexer("Unknown lexem");
+            return { TokenType::END_OF_STREAM, "", charPos };
+        default: {
+            //ErrorHandler::handleFromLexer("Unknown lexeme");
+            auto [line, col] = source_.getCurrentPosition();
+            throw UnknownLexemeError(c, line, col);
+        }
     }
 }
 
-Token Lexer::constructEndOfInstr(char c) {
+Token Lexer::constructEndOfInstr(char c, const PosInStream &cPos) {
     bool newlineConstructed = consumeNewline(c);
     assert(newlineConstructed);
-    return { TokenType::END_OF_INSTRUCTION, "" };
+    return { TokenType::END_OF_INSTRUCTION, "", cPos };
 }
 
-Token Lexer::constructAdditiveOpOrFuncResult(char c) {
+Token Lexer::constructAdditiveOpOrFuncResult(char c, const PosInStream &cPos) {
     char nextCh = source_.getChar();
     if (nextCh == c) {
-        return { TokenType::OP_SUFFIX, std::string{c, nextCh} };
+        return { TokenType::OP_SUFFIX, std::string{c, nextCh}, cPos };
     } else if (c == '-' && nextCh == '>') {
-        return { TokenType::FUNC_RESULT, "" };
+        return { TokenType::FUNC_RESULT, "", cPos };
     }
     source_.ungetChar(nextCh);
-    return { TokenType::OP_ADD, std::string{c} };
+    return { TokenType::OP_ADD, std::string{c}, cPos };
 }
 
-Token Lexer::constructAssignOrEq([[maybe_unused]] char c) {
+Token Lexer::constructAssignOrEq([[maybe_unused]] char c, const PosInStream &cPos) {
     assert(c == '=');
     char nextCh = source_.getChar();
     if (nextCh == '=') {
-        return { TokenType::OP_EQ, "==" };
+        return { TokenType::OP_EQ, "==", cPos };
     }
     source_.ungetChar(nextCh);
-    return { TokenType::ASSIGN, "" };
+    return { TokenType::ASSIGN, "", cPos };
 }
 
-Token Lexer::constructRelationalOp(char c) {
+Token Lexer::constructRelationalOp(char c, const PosInStream &cPos) {
     char nextCh = source_.getChar();
     if (nextCh == '=') {
-        return { TokenType::OP_REL, std::string{c, nextCh} };
+        return { TokenType::OP_REL, std::string{c, nextCh}, cPos };
     }
     source_.ungetChar(nextCh);
-    return { TokenType::OP_REL, std::string{c} };
+    return { TokenType::OP_REL, std::string{c}, cPos };
 }
 
-Token Lexer::constructNotEq(char c) {
+Token Lexer::constructNotEq(char c, const PosInStream &cPos) {
     c = source_.getChar();
     if (c != '=') {
         ErrorHandler::handleFromLexer("'!' not followed by '='!");
     }
-    return { TokenType::OP_EQ, "!=" };
+    return { TokenType::OP_EQ, "!=", cPos };
 }
 
-Token Lexer::constructString(char c) {
+Token Lexer::constructString(char c, const PosInStream &cPos) {
     assert(c == '"');
     bool escaping = false;
     std::ostringstream buffer;
-    buffer << c;
-    unsigned int length = 1;
+    unsigned int length = 0;
+    PosInStream charPos;
+    //PosInStream textCharPos = source_.getCurrentPosition();
+    String stringToken;
 
     while (true) {
         c = source_.getChar();
+        charPos = source_.getCurrentPosition();
 
         if (consumeNewline(c)) {
             ErrorHandler::handleFromLexer("closing '\"' not found in string before encountering newline!");
         }
 
-        assertStringLength(++length);
-        buffer << c;
-
         switch (c) {
             case '\\':
                 escaping = true;
+                c = 0;
+                break;
+            case '{':
+                if (!escaping) {
+                    std::string text = buffer.str();
+                    buffer.str("");
+                    if (!text.empty()) {
+                        stringToken.innerTokens.push_back({
+                                TokenType::TEXT_WITHIN_STRING, text //TODO position
+                            });
+                    }
+                        stringToken.innerTokens.push_back({
+                            TokenType::BRACKET_OPEN, "", charPos
+                        });
+                    Token format;
+                    do {
+                        format = getToken();
+                        stringToken.innerTokens.push_back(format);
+                    }
+                    while (format.type != TokenType::BRACKET_CLOSE);
+                    c = 0;
+                }
+                escaping = false;
+                break;
+            /*case '}':
+                if (!escaping) {
+                    stringToken.innerTokens.emplace_back(
+                            TokenType::BRACKET_CLOSE, "", charPos
+                        );
+                    c = 0;
+                }
+                escaping = false;
+                break;*/
+            case 'n':
+                if (escaping) {
+                    c = '\n';
+                    escaping = false;
+                }
+                break;
+            case 't':
+                if (escaping) {
+                    c = '\t';
+                    escaping = false;
+                }
                 break;
             case '"':
                 if (!escaping) {
-                    return { TokenType::STRING, buffer.str() };
+                    std::string text = buffer.str();
+                    if (!text.empty()) {
+                        stringToken.innerTokens.push_back({
+                                TokenType::TEXT_WITHIN_STRING, text //TODO position
+                            });
+                    }
+                    return { TokenType::STRING, stringToken, cPos };
                 }
                 [[fallthrough]];
             default:
                 escaping = false;
         }
+        if (c) {
+            buffer << c;
+            assertStringLength(++length);
+        }
     }
 }
 
-Token Lexer::constructIdOrUnitOrKeyword(char c) {  
+Token Lexer::constructIdOrUnitOrKeyword(char c, const PosInStream &cPos) {
     std::stringstream buffer;
     buffer << c;
     unsigned int length = 1;
@@ -253,19 +317,19 @@ Token Lexer::constructIdOrUnitOrKeyword(char c) {
 
     // check if it is a keyword
     if (auto it = keywords_.find(value); it != keywords_.end()) {
-        return { it->second, value };
+        return { it->second, value, cPos };
     }
     // check if it is a unit
     if (auto it = units_.find(value); it != units_.end()) {
-        return { TokenType::UNIT, it->second };
+        return { TokenType::UNIT, it->second, cPos };
     }
-    return { TokenType::ID, value };
+    return { TokenType::ID, value, cPos };
 }
 
-Token Lexer::constructNumber(char c) {
-    int digitInBlockCounter = 1;
-    int separatorCounter = 0;
+Token Lexer::constructNumber(char c, const PosInStream &cPos) {
+    assert(isdigit(c));
     int value = c - '0';
+    std::vector<int> digitsInBlocks({0});
     unsigned int length = 1;
 
     while (true) {
@@ -277,21 +341,26 @@ Token Lexer::constructNumber(char c) {
             if (value == 0) { // first digit is 0 and is not followed by dot
                 ErrorHandler::handleFromLexer("First digit is 0 and is not followed by dot in number!");
             }
-            ++digitInBlockCounter;
+            ++digitsInBlocks.back();
+            if (
+                digitsInBlocks.size() > 1 // digit blocks are being used
+                && (
+                    digitsInBlocks.back() > 3
+                    || digitsInBlocks[0] > 3
+                )
+            ) {
+                ErrorHandler::handleFromLexer("Digit block in number longer than 3 digits!");
+            }
             value = value * 10 + c - '0';
             continue;
         }
 
         switch (c) {
-            case ' ':
-                ++separatorCounter;
+            case ' ': // this could be the space ending the number
                 if (!isdigit(prevCh)) {
                     ErrorHandler::handleFromLexer("Digit block separator not following a digit in number!");
                 }
-                if (digitInBlockCounter > 3) {
-                    ErrorHandler::handleFromLexer("Digit block in number longer than 3 digits!");
-                }
-                digitInBlockCounter = 0; // separator starts a new block
+                digitsInBlocks.emplace_back(0);
                 break;
 
             case '.': {
@@ -309,7 +378,7 @@ Token Lexer::constructNumber(char c) {
                 }
                 double fraction = static_cast<double>(intValue) / divisor;
                 double doubleValue = static_cast<double>(value) + fraction;
-                return { TokenType::NUMBER, doubleValue };
+                return { TokenType::NUMBER, doubleValue, cPos };
             }
 
             default:
@@ -317,7 +386,7 @@ Token Lexer::constructNumber(char c) {
                 if (prevCh == ' ') {
                     source_.ungetChar(prevCh);
                 }
-                return { TokenType::NUMBER, value };
+                return { TokenType::NUMBER, value, cPos };
         }
     }
 }

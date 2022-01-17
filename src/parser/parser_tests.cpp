@@ -13,7 +13,7 @@
 const std::unordered_map<std::string, Token> tokens {
     { "1"        , {TokenType::NUMBER             , 1   } },
     { "a"        , {TokenType::ID                 , "a" } },
-    { "u"        , {TokenType::UNIT               , Unit{"", UnitType::METER, 1} } },
+    { "u"        , {TokenType::UNIT               , Unit{"", UnitType::METER, 1}} },
     { "*"        , {TokenType::OP_MULT            , "*" } },
     { "/"        , {TokenType::OP_MULT            , "/" } },
     { "+"        , {TokenType::OP_ADD             , "+" } },

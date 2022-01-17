@@ -10,9 +10,6 @@ public:
     Variable(const std::string &name, Type2 type)
         : name_(name), type_(std::move(type)) {}
     
-    Variable(Variable &&) = default;
-    Variable& operator=(Variable &&) = default;
-    
     const std::string& getName() const {
         return name_;
     }
@@ -28,7 +25,6 @@ public:
 private:
     std::string name_;
     Type2 type_;
-    //std::variant<double, int> value_;
 };
 
 #endif // TKOMSIUNITS_CODE_OBJECTS_VARIABLE_H_INCLUDED

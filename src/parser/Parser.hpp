@@ -23,7 +23,12 @@ Parser<TokenSource>::Parser(TokenSource &lexer)
 
 template <typename TokenSource>
 void Parser<TokenSource>::advance() {
-    currToken_ = lexer_.getToken();
+    Token prev;
+    do {
+        prev = currToken_;
+        currToken_ = lexer_.getToken();
+    } while (currToken_.type == TokenType::END_OF_INSTRUCTION
+        && currToken_.type == prev.type);
 }
 
 template <typename TokenSource>
@@ -81,7 +86,8 @@ std::unique_ptr<Program> Parser<TokenSource>::parse() {
 
 template <typename TokenSource>
 std::unique_ptr<Instruction> Parser<TokenSource>::parseInstruction() {
-    std::unique_ptr<Instruction> instr = nullptr;
+    std::unique_ptr<Instruction> instr = nullptr; 
+    
     switch (currToken_.type) {
         case TokenType::ID: {
             // VarDefOrAssignment or FuncCall or SuffixInstr
@@ -124,7 +130,6 @@ std::unique_ptr<Instruction> Parser<TokenSource>::parseInstruction() {
         case TokenType::BRACKET_CLOSE:
             // end of instruction block
         case TokenType::END_OF_STREAM:
-        case TokenType::END_OF_INSTRUCTION: //TODO should be handled by filter before parser
             return nullptr;
         default: {
             // invalid instruction
@@ -236,7 +241,34 @@ std::unique_ptr<While> Parser<TokenSource>::tryParseWhileInstr() {
 
 template <typename TokenSource>
 std::unique_ptr<Expression> Parser<TokenSource>::parseExpression() {
-    return parseRelExpression();
+    switch (currToken_.type) {
+        case TokenType::STRING:
+            return parseString();
+        default:
+            return parseEqualExpression();
+    }
+}
+
+template <typename TokenSource>
+std::unique_ptr<Expression> Parser<TokenSource>::parseEqualExpression() {
+    std::unique_ptr<Expression> leftOperand = parseRelExpression();
+    if (!leftOperand) {
+        return nullptr;
+    }
+    while (currToken_.type == TokenType::OP_EQ) {
+        Token op = currToken_;
+        advance();
+        std::unique_ptr<Expression> rightOperand = parseRelExpression();
+        if (!rightOperand) {
+            ErrorHandler::handleFromParser("Expected RelExpression after OP_EQ in EqualExpression");
+        }
+        leftOperand = std::make_unique<BinaryExpression>(
+                std::move(leftOperand),
+                op,
+                std::move(rightOperand)
+            );
+    }
+    return leftOperand;
 }
 
 template <typename TokenSource>
@@ -354,24 +386,89 @@ std::unique_ptr<Expression> Parser<TokenSource>::parseExpressionElement() {
 }
 
 template <typename TokenSource>
+std::unique_ptr<codeobj::String> Parser<TokenSource>::parseString() {
+    assert(currToken_.type == TokenType::STRING);
+    String strToken = std::get<String>(currToken_.value);
+    std::vector<std::unique_ptr<Expression>> parts;
+    std::optional<TokenType> expected = std::nullopt;
+    
+    for (auto iter = strToken.innerTokens.begin(); iter != strToken.innerTokens.end(); ++iter) {
+        if (expected && iter->type != expected) {
+            ErrorHandler::handleFromParser("Wrong formatted string format");
+        }
+        switch (iter->type) {
+            case TokenType::TEXT_WITHIN_STRING:
+                parts.emplace_back(std::make_unique<Value>(std::get<std::string>(iter->value)));
+                break;
+            case TokenType::BRACKET_OPEN:
+                expected = TokenType::ID;
+                break;
+            case TokenType::ID:
+                if (!expected) {
+                    ErrorHandler::handleFromParser("Wrong formatted string format: Id not inside '{}'");
+                }
+                expected = TokenType::BRACKET_CLOSE;
+                parts.emplace_back(std::make_unique<VarReference>(std::get<std::string>(iter->value)));
+                break;
+            case TokenType::BRACKET_CLOSE:
+                if (!expected) {
+                    ErrorHandler::handleFromParser("Wrong formatted string format: '}' not after id");
+                }
+                expected = std::nullopt;
+                break;
+            default:
+                ErrorHandler::handleFromParser("Wrong formatted string format: Unexpected token");
+        }
+    }
+    
+    advance();
+    return std::make_unique<codeobj::String>(std::move(parts));
+}
+
+template <typename TokenSource>
 codeobj::Unit Parser<TokenSource>::parseUnit() {
     if (currToken_.type != TokenType::SQUARE_OPEN) {
         return codeobj::Unit();
     }
     advance();
     
-    codeobj::Unit unit = parseUnitTokens();
+    codeobj::Unit unit = parseComplexUnitTokens();
     
     requireToken(TokenType::SQUARE_CLOSE);
     return unit;
 }
 
 template <typename TokenSource>
-codeobj::Unit Parser<TokenSource>::parseUnitTokens() {
-    //TODO parse complex units (expressions)
-    Token unit = requireToken(TokenType::UNIT);
+codeobj::Unit Parser<TokenSource>::parseComplexUnitTokens() {
+    codeobj::Unit leftOperand = parseUnitElementTokens();
 
-    return codeobj::Unit(std::get<Unit>(unit.value));
+    while (currToken_.type == TokenType::OP_MULT) {
+        Token op = currToken_;
+        advance();
+        codeobj::Unit rightOperand = parseUnitElementTokens();
+
+        leftOperand.combineWithUnit(op, rightOperand);
+    }
+    return leftOperand;
+}
+
+template <typename TokenSource>
+codeobj::Unit Parser<TokenSource>::parseUnitElementTokens() {
+    codeobj::Unit element;
+    
+    switch (currToken_.type) {
+        case TokenType::PAREN_OPEN:
+            advance();
+            element = parseComplexUnitTokens();
+            requireToken(TokenType::PAREN_CLOSE);
+            break;
+        default: {
+            Token unit = requireToken(TokenType::UNIT);
+            element = codeobj::Unit(std::get<Unit>(unit.value));
+        }    
+    }
+    
+    return element;
 }
 
 template <typename TokenSource>
@@ -399,8 +496,11 @@ Type2 Parser<TokenSource>::parseTypeTokens() {
         case TokenType::KEYWORD_BOOL:
             advance();
             return Type2(Type2::BOOL);
+         case TokenType::KEYWORD_STR:
+            advance();
+            return Type2(Type2::STRING);
         default:
-            return Type2(codeobj::Unit(parseUnitTokens()));
+            return Type2(codeobj::Unit(parseComplexUnitTokens()));
     }
 }
 

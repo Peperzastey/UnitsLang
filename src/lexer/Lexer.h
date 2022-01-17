@@ -5,6 +5,7 @@
 #include <string>
 #include <unordered_map>
 #include <variant>
+#include <vector>
 
 enum class TokenType {
     ID,
@@ -38,6 +39,7 @@ enum class TokenType {
     COMMA,
     FUNC_RESULT,
     STRING,
+    TEXT_WITHIN_STRING,
     END_OF_INSTRUCTION,
     END_OF_STREAM
 };
@@ -71,15 +73,31 @@ struct Unit {
     int power = 1;
 };
 
+struct Token;
+
+struct String {
+    std::vector<Token> innerTokens;
+};
+
 struct Token {
+    struct Position {
+        Position (const PosInStream &pos)
+            : line(pos.lineNumber), column(pos.posInLine) {}
+        Position (unsigned int line, unsigned int col)
+            : line(line), column(col) {}
+        unsigned int line;
+        unsigned int column;
+    };
+    
     TokenType type;
-    std::variant<std::string, int, double, Unit> value;
+    std::variant<std::string, int, double, Unit, String> value;
+    Position pos = {0,0};
 };
 
 class Lexer {
 public:
     const unsigned int MAX_ID_LENGTH = 250;
-    const unsigned int MAX_INT_NUMBER_LENGTH = 12;
+    const unsigned int MAX_INT_NUMBER_LENGTH = 25;
     const unsigned int MAX_POST_DOT_NUMBER_LENGTH = 12;
     const unsigned int MAX_STRING_LITERAL_LENGTH = 250;
 
@@ -93,14 +111,14 @@ private:
     bool discardComment();
     void discardInstrBreak();
     bool consumeNewline(char c);
-    Token constructIdOrUnitOrKeyword(char c);
-    Token constructNumber(char c);
-    Token constructEndOfInstr(char c);
-    Token constructAdditiveOpOrFuncResult(char c);
-    Token constructAssignOrEq(char c);
-    Token constructRelationalOp(char c);
-    Token constructNotEq(char c);
-    Token constructString(char c);
+    Token constructIdOrUnitOrKeyword(char c, const PosInStream &cPos);
+    Token constructNumber(char c, const PosInStream &cPos);
+    Token constructEndOfInstr(char c, const PosInStream &cPos);
+    Token constructAdditiveOpOrFuncResult(char c, const PosInStream &cPos);
+    Token constructAssignOrEq(char c, const PosInStream &cPos);
+    Token constructRelationalOp(char c, const PosInStream &cPos);
+    Token constructNotEq(char c, const PosInStream &cPos);
+    Token constructString(char c, const PosInStream &cPos);
 
     struct IntWithLength {
         int value;

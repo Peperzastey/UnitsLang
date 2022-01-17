@@ -62,14 +62,6 @@ TEST(LexerTests, IdsThatStartLikeKeywords) {
 //TODO test automatically all combinations (like they are generated)
 TEST(LexerTests, Units) {
     std::array units = {
-        /*std::pair{ "mm3", Unit{0.001      , UnitType::METER , 3} },
-        std::pair{ "mm2", Unit{0.001      , UnitType::METER , 2} },
-        std::pair{ "mm" , Unit{0.001      , UnitType::METER , 1} },
-        std::pair{ "m"  , Unit{1          , UnitType::METER , 1} },
-        std::pair{ "kg" , Unit{1'000.0    , UnitType::GRAM  , 1} },
-        std::pair{ "MN" , Unit{1'000'000.0, UnitType::NEWTON, 1} },
-        std::pair{ "J"  , Unit{1          , UnitType::JOULE , 1} },
-        std::pair{ "kPa", Unit{1'000.0    , UnitType::PASCAL, 1} }*/
         std::pair{ "mm3", Unit{"m", UnitType::METER , 3} },
         std::pair{ "mm2", Unit{"m", UnitType::METER , 2} },
         std::pair{ "mm" , Unit{"m", UnitType::METER , 1} },
@@ -137,5 +129,33 @@ TEST(LexerTests, IdsThatStartLikeUnits) {
         EXPECT_EQ(TokenType::ID, token.type) << "not met for: " << id;
         token = lexer.getToken();
         EXPECT_EQ(TokenType::END_OF_STREAM, token.type) << "not met for: " << id;
+    }
+}
+
+TEST(LexerTests, Numbers) {
+    std::array inputs = {
+        std::pair{ "0", 0.0 },
+        std::pair{ "0.0", 0.0 },
+        std::pair{ "0.01", 0.01 },
+        std::pair{ "1000000", 1'000'000.0 },
+        std::pair{ "1 000 000", 1'000'000.0 },
+        std::pair{ "1000000.0001", 1'000'000.0001 },
+        std::pair{ "1 000 000.0001", 1'000'000.0001 }
+    };
+
+    for (const auto &[input, expectedValue] : inputs) {
+        std::unique_ptr<Source> src = std::make_unique<StringSource>(input);
+        Lexer lexer(*src);
+        Token token = lexer.getToken();
+        EXPECT_EQ(TokenType::NUMBER, token.type) << "not met for: " << input;
+        double value = 0.0;
+        if (std::holds_alternative<double>(token.value)) {
+            value = std::get<double>(token.value);
+        } else {
+            value = std::get<int>(token.value);
+        }
+        EXPECT_EQ(expectedValue, value) << "not met for: " << input;
+        token = lexer.getToken();
+        EXPECT_EQ(TokenType::END_OF_STREAM, token.type) << "not met for: " << input;
     }
 }

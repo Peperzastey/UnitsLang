@@ -32,6 +32,22 @@ inline void minus(Value &left, const Value &right) {
     left.value = left.asDouble() - right.asDouble();
 }
 
+inline void mult(Value &left, const Value &right) {
+    if (left.type.getTypeClass() != Type2::NUMBER || right.type.getTypeClass() != Type2::NUMBER) {
+        ErrorHandler::handleTypeMismatch("Multiplication operands must be of numeric type");
+    }
+    left.value = left.asDouble() * right.asDouble();
+    left.type.asUnit().multWithUnit(right.type.asUnit());
+}
+
+inline void div(Value &left, const Value &right) {
+    if (left.type.getTypeClass() != Type2::NUMBER || right.type.getTypeClass() != Type2::NUMBER) {
+        ErrorHandler::handleTypeMismatch("Multiplication operands must be of numeric type");
+    }
+    left.value = left.asDouble() / right.asDouble();
+    left.type.asUnit().divWithUnit(right.type.asUnit());
+}
+
 inline void greaterThan(Value &left, const Value &right) {
     if (left.type.getTypeClass() != Type2::NUMBER || right.type.getTypeClass() != Type2::NUMBER) {
         ErrorHandler::handleTypeMismatch("GreaterThan operands must be of numeric type");
@@ -56,6 +72,30 @@ inline void lessThan(Value &left, const Value &right) {
     left.type = Type2::BOOL;
 }
 
+inline void equalTo(Value &left, const Value &right) {
+    if (left.type.getTypeClass() != Type2::NUMBER && left.type.getTypeClass() != Type2::BOOL) {
+        ErrorHandler::handleTypeMismatch("EqualTo operands must be of numeric or bool type");
+    }
+    if (left.type != right.type) {
+        ErrorHandler::handleTypeMismatch("EqualTo operands are not type-compatibile");
+    }
+    //TODO units can have different prefixes!
+    left.value = left.asDouble() == right.asDouble();
+    left.type = Type2::BOOL;
+}
+
+inline void notEqualTo(Value &left, const Value &right) {
+    if (left.type.getTypeClass() != Type2::NUMBER && left.type.getTypeClass() != Type2::BOOL) {
+        ErrorHandler::handleTypeMismatch("NotEqualTo operands must be of numeric or bool type");
+    }
+    if (left.type != right.type) {
+        ErrorHandler::handleTypeMismatch("NotEqualTo operands are not type-compatibile");
+    }
+    //TODO units can have different prefixes!
+    left.value = left.asDouble() != right.asDouble();
+    left.type = Type2::BOOL;
+}
+
 class BinaryExpression : public Expression {
 public:
     BinaryExpression(std::unique_ptr<Expression> leftOperand,
@@ -67,10 +107,14 @@ public:
     
     Value calculate([[maybe_unused]] Interpreter &interpreter) override {
         static const std::unordered_map<std::string, void(*)(Value &, const Value &)> operations {
-            {"+", &add},
-            {"-", &minus},
-            {">", &greaterThan},
-            {"<", &lessThan}
+            {"+" , &add},
+            {"-" , &minus},
+            {"*" , &mult},
+            {"/" , &div},
+            {">" , &greaterThan},
+            {"<" , &lessThan},
+            {"==", &equalTo},
+            {"!=", &notEqualTo}
         };
         Value left = leftOperand_->calculate(interpreter);
         Value right = rightOperand_->calculate(interpreter);

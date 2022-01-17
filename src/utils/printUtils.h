@@ -38,6 +38,7 @@ inline std::ostream& operator<<(std::ostream &os, TokenType tokenType) {
         "COMMA",
         "FUNC_RESULT",
         "STRING",
+        "TEXT_WITHIN_STRING",
         "END_OF_INSTRUCTION",
         "END_OF_STREAM"
     };

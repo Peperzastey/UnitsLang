@@ -5,6 +5,7 @@ add_executable(main
     lexer/Lexer.cpp
     codeObjects/Instruction.cpp
     codeObjects/InstructionBlock.cpp
+    codeObjects/InternalPrintInstr.cpp
     codeObjects/FuncDef.cpp
     codeObjects/Program.cpp
 )
