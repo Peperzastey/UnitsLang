@@ -11,22 +11,22 @@
 
 /*TEST(InterpreterTests, ExpressionSingleValueCalculate) {
     Unit unit{ "m", UnitType::METER, 2 };
-    std::unique_ptr<Expression> expr = std::make_unique<Value>(5.0, Type2(codeobj::Unit(unit)));
+    std::unique_ptr<Expression> expr = std::make_unique<Value>(5.0, Type(codeobj::Unit(unit)));
     Value result = expr->calculate(interpreter);
-    ASSERT_EQ(Type2::NUMBER, result.type.getTypeClass());
+    ASSERT_EQ(Type::NUMBER, result.type.getTypeClass());
     EXPECT_EQ("5[(mm2)/()]", result.toString());
     EXPECT_EQ(5.0, result.asDouble());
 }
 
 TEST(InterpreterTests, SimpleExpressionCalculate) {
     Unit unit{ "", UnitType::METER, 1 };
-    auto val1 = std::make_unique<Value>(3.5, Type2(codeobj::Unit(unit)));
-    auto val2 = std::make_unique<Value>(5.0, Type2(codeobj::Unit(unit)));
+    auto val1 = std::make_unique<Value>(3.5, Type(codeobj::Unit(unit)));
+    auto val2 = std::make_unique<Value>(5.0, Type(codeobj::Unit(unit)));
     std::unique_ptr<Expression> expr = std::make_unique<BinaryExpression>(
             std::move(val1), Token{TokenType::OP_ADD, "-"}, std::move(val2)
         );
     Value result = expr->calculate(interpreter);
-    ASSERT_EQ(Type2::NUMBER, result.type.getTypeClass());
+    ASSERT_EQ(Type::NUMBER, result.type.getTypeClass());
     EXPECT_EQ("-1.5[(m)/()]", result.toString());
     EXPECT_EQ(-1.5, result.asDouble());
 }*/

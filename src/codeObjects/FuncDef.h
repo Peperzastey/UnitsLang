@@ -3,7 +3,7 @@
 
 #include "InstructionBlock.h"
 #include "Variable.h"
-#include "Type2.h"
+#include "Type.h"
 #include "Value.h"
 #include "error/ErrorHandler.h"
 #include <memory>
@@ -18,7 +18,7 @@ public:
     FuncDef(
             const std::string &name,
             std::vector<Variable> &&params,
-            Type2 returnType,
+            Type returnType,
             std::unique_ptr<InstructionBlock> &&body
         )
         : name_(name)
@@ -47,7 +47,7 @@ public:
             }  
         }
         output += ')';
-        if (returnType_.getTypeClass() != Type2::VOID) {
+        if (returnType_.getTypeClass() != Type::VOID) {
             output += "->" + returnType_.toString();
         }
         return output;
@@ -57,14 +57,14 @@ public:
         return name_;
     }
     
-    const Type2& getType() const {
+    const Type& getType() const {
         return returnType_;
     }
     
 private:
     const std::string name_;
     std::vector<Variable> params_;
-    Type2 returnType_;
+    Type returnType_;
     std::unique_ptr<InstructionBlock> body_;
 };
 

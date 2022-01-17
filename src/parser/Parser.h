@@ -13,7 +13,7 @@
 #include "codeObjects/While.h"
 #include "codeObjects/Unit.h"
 #include "codeObjects/Type.h"
-#include "codeObjects/Type2.h"
+#include "codeObjects/Type.h"
 #include "codeObjects/Variable.h"
 #include "codeObjects/String.h"
 #include <memory>
@@ -42,8 +42,8 @@ protected:
     codeobj::Unit parseUnit();
     codeobj::Unit parseComplexUnitTokens();
     codeobj::Unit parseUnitElementTokens();
-    std::optional<Type2> parseType();
-    Type2 parseTypeTokens();
+    std::optional<Type> parseType();
+    Type parseTypeTokens();
     //std::unique_ptr<codeObj::Unit> parseUnitExpressionElement()
     
     std::optional<Variable> parseFuncParameter();

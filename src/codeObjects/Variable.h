@@ -1,20 +1,20 @@
 #ifndef TKOMSIUNITS_CODE_OBJECTS_VARIABLE_H_INCLUDED
 #define TKOMSIUNITS_CODE_OBJECTS_VARIABLE_H_INCLUDED
 
-#include "Type2.h"
+#include "Type.h"
 #include <string>
 #include <memory>
 
 class Variable {
 public:
-    Variable(const std::string &name, Type2 type)
+    Variable(const std::string &name, Type type)
         : name_(name), type_(std::move(type)) {}
     
     const std::string& getName() const {
         return name_;
     }
     
-    const Type2& getType() const {
+    const Type& getType() const {
         return type_;
     }
     
@@ -24,7 +24,7 @@ public:
     
 private:
     std::string name_;
-    Type2 type_;
+    Type type_;
 };
 
 #endif // TKOMSIUNITS_CODE_OBJECTS_VARIABLE_H_INCLUDED

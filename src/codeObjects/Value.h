@@ -2,21 +2,21 @@
 #define TKOMSIUNITS_CODE_OBJECTS_VALUE_H_INCLUDED
 
 #include "Expression.h"
-#include "Type2.h"
+#include "Type.h"
 #include <variant>
 #include <sstream>
 
 struct Value : public Expression {
-    Value(double value, Type2 &&type)
+    Value(double value, Type &&type)
         : value(value), type(std::move(type)) {
-        if (type.getTypeClass() != Type2::NUMBER) {
+        if (type.getTypeClass() != Type::NUMBER) {
             ErrorHandler::handleFromCodeObject("Number value with type not NUMBER");
         }        
     }
     Value(bool value)
-        : value(value), type(Type2::BOOL) {}
+        : value(value), type(Type::BOOL) {}
     Value(std::string value)
-        : value(std::move(value)), type(Type2::STRING) {}
+        : value(std::move(value)), type(Type::STRING) {}
         
     Value calculate([[maybe_unused]] Interpreter &interpreter) override {
         return *this;
@@ -65,7 +65,7 @@ struct Value : public Expression {
     }
     
     std::variant<double, bool, std::string> value;
-    Type2 type;
+    Type type;
 };
 
 #endif // TKOMSIUNITS_CODE_OBJECTS_VALUE_H_INCLUDED

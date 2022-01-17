@@ -28,13 +28,13 @@ std::optional<Value> FuncDef::call(Interpreter &interpreter, std::vector<Value> 
             interpreter.deleteFuncCallContext();
             ErrorHandler::handleJumpInstrOutsideWhile("Continue not inside While");
         case InstrResult::NORMAL:
-            if (returnType_.getTypeClass() != Type2::VOID || retVal.has_value()) {
+            if (returnType_.getTypeClass() != Type::VOID || retVal.has_value()) {
                 interpreter.deleteFuncCallContext();
                 ErrorHandler::handleTypeMismatch("Value returned form function '" + name_ + "' does not match its return type");
             }
             break;
         case InstrResult::RETURN:
-            if (returnType_.getTypeClass() == Type2::VOID && retVal.has_value()) {
+            if (returnType_.getTypeClass() == Type::VOID && retVal.has_value()) {
                 interpreter.deleteFuncCallContext();
                 ErrorHandler::handleTypeMismatch("Value returned form function '" + name_ + "' does not match its return type");
             } //TODO one if

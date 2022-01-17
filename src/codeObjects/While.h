@@ -20,7 +20,7 @@ public:
     InstrResult execute([[maybe_unused]] Interpreter &interpreter) const override {
         auto calcCond = [&interpreter, cond = cond_.get()]() {
                 Value condResult = cond->calculate(interpreter);
-                if (condResult.type.getTypeClass() != Type2::BOOL) {
+                if (condResult.type.getTypeClass() != Type::BOOL) {
                     ErrorHandler::handleTypeMismatch("Expression used as While condition must result in bool value");
                 }
                 return condResult.asBool();

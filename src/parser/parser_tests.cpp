@@ -320,8 +320,8 @@ TEST(ParserTests, FuncDefReturnTypeVoid) {
     parser.advance();
     std::unique_ptr<FuncDef> funcDef = parser.parseFuncDef();
     ASSERT_NE(nullptr, funcDef);
-    const Type2 &retType = funcDef->getType();
-    ASSERT_EQ(Type2::VOID, retType.getTypeClass());
+    const Type &retType = funcDef->getType();
+    ASSERT_EQ(Type::VOID, retType.getTypeClass());
     EXPECT_EQ(expectedRepr, funcDef->toString());
 }
 
@@ -335,8 +335,8 @@ TEST(ParserTests, FuncDefReturnTypeBool) {
     parser.advance();
     std::unique_ptr<FuncDef> funcDef = parser.parseFuncDef();
     ASSERT_NE(nullptr, funcDef);
-    const Type2 &retType = funcDef->getType();
-    ASSERT_EQ(Type2::BOOL, retType.getTypeClass());
+    const Type &retType = funcDef->getType();
+    ASSERT_EQ(Type::BOOL, retType.getTypeClass());
     EXPECT_EQ(expectedRepr, funcDef->toString());
 }
 
@@ -350,8 +350,8 @@ TEST(ParserTests, FuncDefReturnTypeScalar) {
     parser.advance();
     std::unique_ptr<FuncDef> funcDef = parser.parseFuncDef();
     ASSERT_NE(nullptr, funcDef);
-    const Type2 &retType = funcDef->getType();
-    ASSERT_EQ(Type2::NUMBER, retType.getTypeClass());
+    const Type &retType = funcDef->getType();
+    ASSERT_EQ(Type::NUMBER, retType.getTypeClass());
     EXPECT_EQ(true, retType.asUnit().isScalar());
     EXPECT_EQ(expectedRepr, funcDef->toString());
 }
@@ -366,8 +366,8 @@ TEST(ParserTests, FuncDefReturnTypeUnit) {
     parser.advance();
     std::unique_ptr<FuncDef> funcDef = parser.parseFuncDef();
     ASSERT_NE(nullptr, funcDef);
-    const Type2 &retType = funcDef->getType();
-    ASSERT_EQ(Type2::NUMBER, retType.getTypeClass());
+    const Type &retType = funcDef->getType();
+    ASSERT_EQ(Type::NUMBER, retType.getTypeClass());
     EXPECT_EQ(false, retType.asUnit().isScalar());
     EXPECT_EQ(expectedRepr, funcDef->toString());
 }
@@ -586,9 +586,9 @@ TEST(ParserTests, UnitType) {
         Lexer lexer(*src);
         TestParserNotMock parser(lexer);
         parser.advance();
-        std::optional<Type2> type = parser.parseType();
+        std::optional<Type> type = parser.parseType();
         ASSERT_TRUE(type.has_value());
-        ASSERT_EQ(Type2::NUMBER, type->getTypeClass());
+        ASSERT_EQ(Type::NUMBER, type->getTypeClass());
         EXPECT_EQ(expectedStr, type->toString()) << "not met for: " << str;
         EXPECT_EQ(isScalar, type->asUnit().isScalar()) << "not met for: " << str;
     }
@@ -599,9 +599,9 @@ TEST(ParserTests, BoolType) {
     Lexer lexer(*src);
     TestParserNotMock parser(lexer);
     parser.advance();
-    std::optional<Type2> type = parser.parseType();
+    std::optional<Type> type = parser.parseType();
     ASSERT_TRUE(type.has_value());
-    ASSERT_EQ(Type2::BOOL, type->getTypeClass());
+    ASSERT_EQ(Type::BOOL, type->getTypeClass());
     EXPECT_EQ("[bool]", type->toString());
 }
 
@@ -619,14 +619,14 @@ TEST(ParserTests, ScalarTypeIsOnly1InSquares) {
         parser.advance();
         if (!isCorrect) {
             EXPECT_THROW({
-                    std::optional<Type2> type = parser.parseType();
+                    std::optional<Type> type = parser.parseType();
                 },
                 std::runtime_error
             ) << "not met for: " << str;
         } else {
-            std::optional<Type2> type = parser.parseType();
+            std::optional<Type> type = parser.parseType();
             ASSERT_TRUE(type.has_value());
-            ASSERT_EQ(Type2::NUMBER, type->getTypeClass());
+            ASSERT_EQ(Type::NUMBER, type->getTypeClass());
             EXPECT_EQ(expectedStr, type->toString()) << "not met for: " << str;
             EXPECT_EQ(true, type->asUnit().isScalar()) << "not met for: " << str;
         }

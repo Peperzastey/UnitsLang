@@ -30,7 +30,7 @@ public:
         //TODO new scope
         if (cond_) {
             Value condResult = cond_->calculate(interpreter);
-            if (condResult.type.getTypeClass() != Type2::BOOL) {
+            if (condResult.type.getTypeClass() != Type::BOOL) {
                 ErrorHandler::handleTypeMismatch("Expression used as If condition must result in bool value");
             }
             if (condResult.asBool()) {

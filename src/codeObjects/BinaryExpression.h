@@ -11,7 +11,7 @@
 #include <sstream>
 
 inline void add(Value &left, const Value &right) {
-    if (left.type.getTypeClass() != Type2::NUMBER || right.type.getTypeClass() != Type2::NUMBER) {
+    if (left.type.getTypeClass() != Type::NUMBER || right.type.getTypeClass() != Type::NUMBER) {
         ErrorHandler::handleTypeMismatch("Addition operands must be of numeric type");
     }
     if (left.type != right.type) {
@@ -22,7 +22,7 @@ inline void add(Value &left, const Value &right) {
 }
 
 inline void minus(Value &left, const Value &right) {
-    if (left.type.getTypeClass() != Type2::NUMBER || right.type.getTypeClass() != Type2::NUMBER) {
+    if (left.type.getTypeClass() != Type::NUMBER || right.type.getTypeClass() != Type::NUMBER) {
         ErrorHandler::handleTypeMismatch("Addition operands must be of numeric type");
     }
     if (left.type != right.type) {
@@ -33,7 +33,7 @@ inline void minus(Value &left, const Value &right) {
 }
 
 inline void mult(Value &left, const Value &right) {
-    if (left.type.getTypeClass() != Type2::NUMBER || right.type.getTypeClass() != Type2::NUMBER) {
+    if (left.type.getTypeClass() != Type::NUMBER || right.type.getTypeClass() != Type::NUMBER) {
         ErrorHandler::handleTypeMismatch("Multiplication operands must be of numeric type");
     }
     left.value = left.asDouble() * right.asDouble();
@@ -41,7 +41,7 @@ inline void mult(Value &left, const Value &right) {
 }
 
 inline void div(Value &left, const Value &right) {
-    if (left.type.getTypeClass() != Type2::NUMBER || right.type.getTypeClass() != Type2::NUMBER) {
+    if (left.type.getTypeClass() != Type::NUMBER || right.type.getTypeClass() != Type::NUMBER) {
         ErrorHandler::handleTypeMismatch("Multiplication operands must be of numeric type");
     }
     left.value = left.asDouble() / right.asDouble();
@@ -49,7 +49,7 @@ inline void div(Value &left, const Value &right) {
 }
 
 inline void greaterThan(Value &left, const Value &right) {
-    if (left.type.getTypeClass() != Type2::NUMBER || right.type.getTypeClass() != Type2::NUMBER) {
+    if (left.type.getTypeClass() != Type::NUMBER || right.type.getTypeClass() != Type::NUMBER) {
         ErrorHandler::handleTypeMismatch("GreaterThan operands must be of numeric type");
     }
     if (left.type != right.type) {
@@ -57,11 +57,11 @@ inline void greaterThan(Value &left, const Value &right) {
     }
     //TODO units can have different prefixes!
     left.value = left.asDouble() > right.asDouble();
-    left.type = Type2::BOOL;
+    left.type = Type::BOOL;
 }
 
 inline void lessThan(Value &left, const Value &right) {
-    if (left.type.getTypeClass() != Type2::NUMBER || right.type.getTypeClass() != Type2::NUMBER) {
+    if (left.type.getTypeClass() != Type::NUMBER || right.type.getTypeClass() != Type::NUMBER) {
         ErrorHandler::handleTypeMismatch("LessThan operands must be of numeric type");
     }
     if (left.type != right.type) {
@@ -69,11 +69,11 @@ inline void lessThan(Value &left, const Value &right) {
     }
     //TODO units can have different prefixes!
     left.value = left.asDouble() < right.asDouble();
-    left.type = Type2::BOOL;
+    left.type = Type::BOOL;
 }
 
 inline void equalTo(Value &left, const Value &right) {
-    if (left.type.getTypeClass() != Type2::NUMBER && left.type.getTypeClass() != Type2::BOOL) {
+    if (left.type.getTypeClass() != Type::NUMBER && left.type.getTypeClass() != Type::BOOL) {
         ErrorHandler::handleTypeMismatch("EqualTo operands must be of numeric or bool type");
     }
     if (left.type != right.type) {
@@ -81,11 +81,11 @@ inline void equalTo(Value &left, const Value &right) {
     }
     //TODO units can have different prefixes!
     left.value = left.asDouble() == right.asDouble();
-    left.type = Type2::BOOL;
+    left.type = Type::BOOL;
 }
 
 inline void notEqualTo(Value &left, const Value &right) {
-    if (left.type.getTypeClass() != Type2::NUMBER && left.type.getTypeClass() != Type2::BOOL) {
+    if (left.type.getTypeClass() != Type::NUMBER && left.type.getTypeClass() != Type::BOOL) {
         ErrorHandler::handleTypeMismatch("NotEqualTo operands must be of numeric or bool type");
     }
     if (left.type != right.type) {
@@ -93,7 +93,7 @@ inline void notEqualTo(Value &left, const Value &right) {
     }
     //TODO units can have different prefixes!
     left.value = left.asDouble() != right.asDouble();
-    left.type = Type2::BOOL;
+    left.type = Type::BOOL;
 }
 
 class BinaryExpression : public Expression {

@@ -70,8 +70,8 @@ private:
             );
         auto printFuncDef = std::make_unique<FuncDef>(
                 "print",
-                std::vector{ Variable{"_", Type2::STRING} },
-                Type2::VOID,
+                std::vector{ Variable{"_", Type::STRING} },
+                Type::VOID,
                 std::move(printFuncInstrBlock)
             );
         addFuncDef(std::move(printFuncDef));

@@ -3,7 +3,7 @@
 
 #include "Instruction.h"
 #include "Expression.h"
-#include "Type2.h"
+#include "Type.h"
 #include "Value.h"
 #include "Interpreter.h"
 #include <memory>
@@ -14,7 +14,7 @@ class VarDefOrAssignment : public Instruction {
 public:
     VarDefOrAssignment(const std::string &name,
         std::unique_ptr<Expression> expr,
-        std::optional<Type2> declatedType
+        std::optional<Type> declatedType
         )
         : name_(name)
         , expr_(std::move(expr))
@@ -55,7 +55,7 @@ public:
 private:
     std::string name_;
     std::unique_ptr<Expression> expr_;
-    std::optional<Type2> declaredType_;
+    std::optional<Type> declaredType_;
 };
 
 #endif // TKOMSIUNITS_CODE_OBJECTS_VAR_DEF_H_INCLUDED

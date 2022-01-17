@@ -1,7 +1,6 @@
 #ifndef TKOMSIUNITS_CODE_OBJECTS_UNIT_H_INCLUDED
 #define TKOMSIUNITS_CODE_OBJECTS_UNIT_H_INCLUDED
 
-#include "Type.h"
 #include "error/ErrorHandler.h"
 #include "lexer/Lexer.h"
 #include "utils/printUtils.h"
@@ -17,7 +16,7 @@ std::ostream& operator<<(std::ostream &os, const codeobj::Unit &unit);
 
 namespace codeobj {
 
-class Unit : public Type {
+class Unit {
 public:
     Unit() : isScalar_(true) {}
 

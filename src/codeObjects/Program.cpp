@@ -13,7 +13,7 @@ int Program::execute(Interpreter &interpreter) const {
             if (!retVal) {
                 return 0;
             }
-            if (retVal->type.getTypeClass() != Type2::NUMBER || !retVal->type.asUnit().isScalar()) {
+            if (retVal->type.getTypeClass() != Type::NUMBER || !retVal->type.asUnit().isScalar()) {
                 ErrorHandler::handleTypeMismatch("Return value from main can only of scalar type");
             }
             return static_cast<int>(retVal->asDouble());
