@@ -315,8 +315,6 @@ Interpreter zostanie zaimplementowany przy użyciu języka C++.
 Użyte narzędzia i bilioteki:
 * `CMake` - budowanie projektu i zarządzanie zależnościami
 * `GTest` - testy jednostkowe
-* `boost.program_options` - obsługa parametrów wywołania w cmdline
-* inne biblioteki `Boost`, jeśli na etapie implementacji zostaną uznane za przydatne
 
 Interpreter będzie przyjmował jako wejście strumień znaków (kod źródłowy). Możliwości podania wejścia interpretera:
 * stdin procesu interpretera
@@ -326,8 +324,84 @@ Wyjściem procesu interpretera będzie:
 * exit status - liczba całkowita podana w instrukcji `return` w scopie globalnym podanego kodu źródłowego (poza ciałami funkcji), lub 0 jeśli taka instrukcja `return` jest nieobecna w wejściu
 * stdout - ciągi znakowe będące wynikiem wołania funkcji `print` w podanym kodzie źródłowym
 
+Dostępne typy danych:
+* liczba z jednostką
+* skalar (w kodzie interpretera traktowany jest jako specjalny rodzaj jednostki)
+* bool - wartość logiczna `true`/`false`
+* string
+
+Nie ma rozróżnienia na typ całkowitoliczbowy i (zmienno)przecinkowy. Interpreter traktuje wartość zmiennych liczbowych jako typ `double`
+
+Instrukcje blokowe tworzą osobny scope dla zmiennych. W nowym scopie możliwe jest odwołanie się i modyfikacja wartości zmiennych w scopach-rodzicach
+oraz w global scopie.
+
+Wywołanie fukncji powoduje powstanie nowego `FunctionCallContext` na stosie. W ciele funkcji istnieje możliwość odwołania się i modyfikacji jedynie
+argumentów wywołania tej funkcji oraz zmiennych w global scopie.
+
+Możliwe jest przykrywanie (shadowing) parametrów funkcji przez definicję zmiennej o tej samej nazwie (oraz innym lub tym samym typie)
+wewnątrz ciała funkcji - wartości przekazane jako argumenty wywołania funkcji mają osobny scope od zmiennych zdefiniowanych w ciele funkcji
+
+Argumenty wywołania funkcji przekazywane są jedynie przez wartość, tak samo wartość zwracana z funkcji.
+
+Nie ma funkcji `main`. Zamiast tego interpreter zaczyna wykonywać napisany kod poczynając od pierwszej instrukcji niebędącej definicją funkcji
+(podobnie jak w języku Python)
+
+Zmienne definiowane poza blokami `{...}` (czyli blokami dla instruckji `if`/`elif`/`else`, `while` oraz blokiem-ciałem definicji funkcji)
+należą do global scope
+
+### Podział kodu na moduły i klasy
+
+Moduły:
+* **`source`**: odpowiedzialny za dostarczenie interfejsu oraz implementacji pobierania kolejnych znaków oraz aktualnej pozycji w strumieniu wejściowym dla `Lexera`
+    * Klasy:
+        * **`Source`**: interfejs
+        * **`FileSource`**: implementacja dostarczająca kolejne znaki z zadanego pliku
+        * **`StringSource`**: implementacja dostarczająca kolejne znaki z ciągu znakowego; umożliwia testy jednostkowe kolejnych modułów
+* **`lexer`**: zależny od modułu `source` i `error`; odpowiedzialny za analizę leksykalną
+    * Klasy:
+        * **`Lexer`**: dostarcza metodę `getToken()` zwracającą kolejny `Token` języka skonstruowany ze znaków od `Source`, lub błąd jeśli się nie powiodło
+        * **`Token`**: struktura opisująca token języka; zawiera typ, wartość oraz pozycję pierwszego znaku tokena w strumieniu wejściowym
+        * **`TokenType`**: enum opisujący typy tokenów
+        * **`Unit`**: jedna z możliwych wartości tokenu; opisuje jednostkę dla wartości liczbowej w języku; zawiera prefix, typ jednostki oraz potęgę
+        * **`UnitType`**: enum opisujący typy jednostek
+        * **`String`**: jedna z możliwych wartości tokenu; opisuje ciąg znakowy w języku; zawiera listę sub-tokenów w celu realizacji formatowania
+        (np. `"a = {a}"`)
+* **`parser`**: zależny od modułu `lexer`, `error` i `codeObjects`; odpowiedzialny za analizę składniową
+    * Klasy:
+        * **`Parser`**: dostarcza metodę `parse()` zwracającą obiekt `Program` z modułu `codeObjects` opisujący strukturę programu, lub błąd jeśli się nie powiodło
+* **`codeObjects`**: zależny od modułu `error`; zawiera klasy reprezentujące konstrukcje języka oraz ich logikę; zawiera klasę `Interpreter`
+    * Klasy:
+        * **`Program`**: reprezentuje powstału program; dostarcza metodę `execute(interpreter)` umożliwiającą wykonanie programu w kontekście dostarczonego obiektu interpretera; zawiera słownik `FuncDefs` oraz `InstructionBlock` zawierający listę instrukcji do wykonania
+        * **`FuncDef`**: reprezentuje definicję funkcji; dostarcza metodę `call(interpreter, args)` umożliwiającą wykonanie funkcji z dostarczoną listą argumentów; korzysta z `InstructionBlock` jako ciała funkcji; zawiera listę `Variables`(lista parametrów)
+        * **`Variable`**: reprezentuje parę nazwa - typ(`Type`)
+        * **`InstructionBlock`**: reprezentuje blok instrukcji; dostarcza metodę `execute(interpreter)`; zawiera listę `Instructions`
+        * **`Instruction`**: abstrakcyjny interfejs dla instrukcji; dostarcza metodę `execute(interpreter)` zwracającą obiekt `InstrResult`
+        * **`InstrResult`**: enum opisujący typy wyników wykonania instrukcji (NORMAL, RETURN, BREAK, CONTINUE)
+        * **`Expression`**: abstrakcyjny interfejs dla wyrażenia; dostarcza metodę `calculate(interpreter)` zwracającą obiekt `Value` oraz `getRPN()` zwracającą string w celu testowania jednostkowego
+        * **`Value`**: implementacja `Expression`; opisuje parę wartość(double/bool/string) - typ(`Type`)
+        * **`Type`**: opisuje typ wartości w języku; zawiera `Type::TypeClass` oraz `Unit`
+        * **`Type::TypeClass`**: enum opisujący typy danych w języku
+        * **`Unit`**: opisuje typ jednostkowy oraz skalarny w języku; zawiera metody wyznaczające jednostkę wynikową operacji arytmetycznych
+        * **`BinaryExpression`** : implementacja `Expression`; reprezentuje operację binarną; zawiera 2 `Expression` - lewy i prawy operand oraz operator
+        * **`VarReference`**: implementacja `Expression`; reprezentuje odwołanie do wartości zmiennej
+        * **`String`**: implementacja `Expression`; reprezentuje ciąg znakowy w języku - osobny typ od Value w celu realizacji formatowania; (w tym celu) zawiera listę `Values`
+        * **`FuncCall`**: implementacja `Instruction` oraz `Expression`; zawiera listę `Expression`(argumenty)
+        * **`If`**: implementacja `Instruction`; reprezentuje instrukcję if/elif/else w języku; zawiera `Expression`(warunek), `InstructionBlock`(blok true) oraz wskazanie na `If`(przynależny elif/else - implementacja łańcuchowa)
+        * **`While`**: implementacja `Instruction`; zawiera `Expression`(warunek), `InstructionBlock`
+        * **`Continue`**: implementacja `Instruction`
+        * **`Break`**: implementacja `Instruction`
+        * **`Return`**: implementacja `Instruction`; zawiera opcjonalny `Expression`(wartość zwracana)
+        * **`VarDefOrAssignment`**: implementacja `Instruction`; reprezentuje instrukcję definicji zmiennej lub przypisania do zmiennej w języku; zawiera `Expression`(wartość dla zmiennej)
+        * **`InternalPrintInstr`**: implementacja `Instruction`; realizuje wypisanie ciągu znakowego do stdout Interpretera w ciele wbudowanej funkcji print()
+        * **`Interpreter`**: dostarcza metodę `executeProgram()` wykonującą obiekt `Program`; dostarcza obiektom instrukcji metody do operacji na zmiennych i funkcjach, realizuje te operacje; realizuje stos wywołań, scopy dla zmiennych, zwracanie wartości z funkcji, pisanie do stdout
+        * **`FuncCallContext`**: reprezentuje kontekst dla wywołania funkcji; dostarcza metod do tworzenia i usuwania subscopów, dostępu i tworzenia zmiennych; zawiera listę Scope-ów (słowników nazwa - wartość(`Value`))
+* **`error`**: odpowiedzialny za obsługę błędów zgłaszanych przez pozostałe moduły
+    * Klasy:
+        * **`ErrorHandler`**: dostarcza metod zgłaszania błędów z wyróżnieniem modułu, z którego pochodzi zgłoszenie
+
 ### Kwestie bezpieczeństwa:
 
 * Limit długości identyfikatorów: 250 znaków
 * Limit długości stałych tekstowych: 250 znaków
-* Limit długości liczb: 250 znaków
+* Limit długości liczb przed przecinkiem: 25 znaków
+* Limit długości liczb po przecinku: 12 znaków
