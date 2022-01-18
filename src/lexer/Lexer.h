@@ -29,6 +29,8 @@ enum class TokenType {
     OP_SUFFIX,
     OP_EQ,
     OP_REL,
+    OP_AND,
+    OP_OR,
     ASSIGN,
     PAREN_OPEN,
     PAREN_CLOSE,
@@ -50,8 +52,7 @@ enum class UnitType {
     METER,
     NEWTON,
     PASCAL,
-    JOULE,
-    SCALAR //TODO only for Parser and Executor
+    JOULE
 };
 
 const std::unordered_map<std::string, double> unitPrefixes {
@@ -118,6 +119,8 @@ private:
     Token constructAssignOrEq(char c, const PosInStream &cPos);
     Token constructRelationalOp(char c, const PosInStream &cPos);
     Token constructNotEq(char c, const PosInStream &cPos);
+    Token constructAnd(char c, const PosInStream &cPos);
+    Token constructOr(char c, const PosInStream &cPos);
     Token constructString(char c, const PosInStream &cPos);
 
     struct IntWithLength {

@@ -16,9 +16,6 @@ public:
         static const std::string INSTR_TYPE = "Break";
         return INSTR_TYPE;
     }
-    
-private:
-    //While &parent;
 };
 
 #endif // TKOMSIUNITS_CODE_OBJECTS_BREAK_H_INCLUDED

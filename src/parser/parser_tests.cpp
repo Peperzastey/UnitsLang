@@ -85,7 +85,6 @@ public:
     using Parser::parseType;
 };
 
-//TODO xD
 class TestParserNotMock : private Parser<Lexer> {
 public:
     using Parser::Parser;
@@ -554,8 +553,6 @@ TEST(ParserTests, NumbersWithSimpleUnits) {
         EXPECT_EQ(expectedStr, expr->getRPN()) << "not met for: " << str;
     }
 }
-
-//TODO IdsCannotBeFollowedByUnitInExpression
 
 TEST(ParserTests, ExpressionWithSimpleUnits) {
     std::string input = "1 + 1 [ u ] * 1 [ u ] ";

@@ -1,4 +1,3 @@
-//#include "Parser.h"
 #ifndef TKOMSIUNITS_PARSER_HPP_INCLUDED
 #define TKOMSIUNITS_PARSER_HPP_INCLUDED
 
@@ -19,6 +18,7 @@ Parser<TokenSource>::Parser(TokenSource &lexer)
     : lexer_(lexer) {
     }
 
+// advance to next Token but skip empty lines and newlines after '(' and '{'
 template <typename TokenSource>
 void Parser<TokenSource>::advance() {
     Token prev;
@@ -26,7 +26,10 @@ void Parser<TokenSource>::advance() {
         prev = currToken_;
         currToken_ = lexer_.getToken();
     } while (currToken_.type == TokenType::END_OF_INSTRUCTION
-        && currToken_.type == prev.type);
+        && (prev.type == TokenType::END_OF_INSTRUCTION
+            || prev.type == TokenType::PAREN_OPEN
+            || prev.type == TokenType::BRACKET_OPEN)
+    );
 }
 
 template <typename TokenSource>
@@ -41,7 +44,7 @@ Token Parser<TokenSource>::requireToken(TokenType expected) {
 
 template <typename TokenSource>
 template <std::size_t N>
-void Parser<TokenSource>::reportUnexpectedToken(const std::array<TokenType, N> &expected/*, const std::string &rule*/) {
+void Parser<TokenSource>::reportUnexpectedToken(const std::array<TokenType, N> &expected) {
     std::cout << "unexpected token\n";
     std::ostringstream os;
     os << "Unexpected token: {" << currToken_ << "}, expecting: [";
@@ -50,13 +53,6 @@ void Parser<TokenSource>::reportUnexpectedToken(const std::array<TokenType, N> &
     }
     os << ']';
     ErrorHandler::handleFromParser(os.str());
-}
-
-template <typename TokenSource>
-void Parser<TokenSource>::skipTokens(TokenType toBeSkipped) {
-    while (currToken_.type == toBeSkipped) {
-        advance();
-    }
 }
 
 template <typename TokenSource>
@@ -88,14 +84,13 @@ std::unique_ptr<Instruction> Parser<TokenSource>::parseInstruction() {
     
     switch (currToken_.type) {
         case TokenType::ID: {
-            // VarDefOrAssignment or FuncCall or SuffixInstr
+            // VarDefOrAssignment or FuncCall
             Token id = currToken_;
             advance();
             instr = tryParseFuncCall(id);
             if (!instr) {
                 instr = tryParseVarDefOrAssignment(id);
             }
-            //TODO ...suffix
             break;
         }
         case TokenType::KEYWORD_RETURN: {
@@ -143,8 +138,6 @@ std::unique_ptr<Instruction> Parser<TokenSource>::parseInstruction() {
 template <typename TokenSource>
 std::unique_ptr<InstructionBlock> Parser<TokenSource>::parseInstructionBlock() {
     requireToken(TokenType::BRACKET_OPEN);
-    skipTokens(TokenType::END_OF_INSTRUCTION);
-    //TODO allow empty lines!!! also between instructions!
     std::vector<std::unique_ptr<Instruction>> block;
     while (std::unique_ptr<Instruction> instr = parseInstruction()) {
         block.push_back(std::move(instr));
@@ -160,7 +153,6 @@ std::unique_ptr<FuncCall> Parser<TokenSource>::tryParseFuncCall(Token id) {
         return nullptr;
     }
     advance();
-    skipTokens(TokenType::END_OF_INSTRUCTION);
 
     // parse arguments
     std::vector<std::unique_ptr<Expression>> arguments;
@@ -243,22 +235,27 @@ std::unique_ptr<Expression> Parser<TokenSource>::parseExpression() {
         case TokenType::STRING:
             return parseString();
         default:
-            return parseEqualExpression();
+            return parseOrExpression();
     }
 }
 
 template <typename TokenSource>
-std::unique_ptr<Expression> Parser<TokenSource>::parseEqualExpression() {
-    std::unique_ptr<Expression> leftOperand = parseRelExpression();
+std::unique_ptr<Expression> Parser<TokenSource>::parseXXXBinaryExpression(
+        ParseExprFunc subExprFunc, TokenType opType,
+        const std::string &exprName, const std::string &subExprName
+    ) {
+    std::unique_ptr<Expression> leftOperand = (this->*subExprFunc)();
     if (!leftOperand) {
         return nullptr;
     }
-    while (currToken_.type == TokenType::OP_EQ) {
+    while (currToken_.type == opType) {
         Token op = currToken_;
         advance();
-        std::unique_ptr<Expression> rightOperand = parseRelExpression();
+        std::unique_ptr<Expression> rightOperand = (this->*subExprFunc)();
         if (!rightOperand) {
-            ErrorHandler::handleFromParser("Expected RelExpression after OP_EQ in EqualExpression");
+            std::ostringstream os;
+            os << "Expected " << subExprName << " after " << opType << " in " << exprName;
+            ErrorHandler::handleFromParser(os.str());
         }
         leftOperand = std::make_unique<BinaryExpression>(
                 std::move(leftOperand),
@@ -267,6 +264,30 @@ std::unique_ptr<Expression> Parser<TokenSource>::parseEqualExpression() {
             );
     }
     return leftOperand;
+}
+
+template <typename TokenSource>
+std::unique_ptr<Expression> Parser<TokenSource>::parseOrExpression() {
+    return parseXXXBinaryExpression(
+            &Parser::parseAndExpression, TokenType::OP_OR,
+            "OrExpression", "AndExpression"
+        );
+}
+
+template <typename TokenSource>
+std::unique_ptr<Expression> Parser<TokenSource>::parseAndExpression() {
+    return parseXXXBinaryExpression(
+            &Parser::parseEqualExpression, TokenType::OP_AND,
+            "AndExpression", "EqualExpression"
+        );
+}
+
+template <typename TokenSource>
+std::unique_ptr<Expression> Parser<TokenSource>::parseEqualExpression() {
+    return parseXXXBinaryExpression(
+            &Parser::parseRelExpression,TokenType::OP_EQ,
+            "EqualExpression", "RelExpression"
+        );
 }
 
 template <typename TokenSource>
@@ -279,71 +300,27 @@ std::unique_ptr<Expression> Parser<TokenSource>::parseRelExpression() {
             advance();
             return std::make_unique<Value>(false);
         default:
-            ;
+            return parseXXXBinaryExpression(
+                    &Parser::parseAddExpression, TokenType::OP_REL,
+                    "RelExpression", "AddExpression"
+                );
     }
-
-    std::unique_ptr<Expression> leftOperand = parseAddExpression();
-    if (!leftOperand) {
-        return nullptr;
-    }
-    while (currToken_.type == TokenType::OP_REL) {
-        Token op = currToken_;
-        advance();
-        std::unique_ptr<Expression> rightOperand = parseAddExpression();
-        if (!rightOperand) {
-            ErrorHandler::handleFromParser("Expected AddExpression after OP_REL in RelExpression");
-        }
-        leftOperand = std::make_unique<BinaryExpression>(
-                std::move(leftOperand),
-                op,
-                std::move(rightOperand)
-            );
-    }
-    return leftOperand;
 }
 
 template <typename TokenSource>
 std::unique_ptr<Expression> Parser<TokenSource>::parseAddExpression() {
-    std::unique_ptr<Expression> leftOperand = parseMultExpression();
-    if (!leftOperand) {
-        return nullptr;
-    }
-    while (currToken_.type == TokenType::OP_ADD) {
-        Token op = currToken_;
-        advance();
-        std::unique_ptr<Expression> rightOperand = parseMultExpression();
-        if (!rightOperand) {
-            ErrorHandler::handleFromParser("Expected MultExpression after OP_ADD in AddExpression");
-        }
-        leftOperand = std::make_unique<BinaryExpression>(
-                std::move(leftOperand),
-                op,
-                std::move(rightOperand)
-            );
-    }
-    return leftOperand;
+    return parseXXXBinaryExpression(
+            &Parser::parseMultExpression, TokenType::OP_ADD,
+            "AddExpression", "MultExpression"
+        );
 }
 
 template <typename TokenSource>
 std::unique_ptr<Expression> Parser<TokenSource>::parseMultExpression() {
-    std::unique_ptr<Expression> leftOperand = parseExpressionElement();
-    if (!leftOperand) {
-        return nullptr;
-    }
-    while (currToken_.type == TokenType::OP_MULT) {
-        Token op = currToken_;
-        advance();
-        std::unique_ptr<Expression> rightOperand = parseExpressionElement();
-        if (!rightOperand) {
-            ErrorHandler::handleFromParser("Expected ExpressionElement after OP_MULT in MultExpression");
-        }
-        leftOperand = std::make_unique<BinaryExpression>(
-                std::move(leftOperand),
-                op,
-                std::move(rightOperand)
-            );
-    }
-    return leftOperand;
+    return parseXXXBinaryExpression(
+            &Parser::parseExpressionElement, TokenType::OP_MULT,
+            "MultExpression", "ExpressionElement"
+        );
 }
 
 template <typename TokenSource>
@@ -362,7 +339,7 @@ std::unique_ptr<Expression> Parser<TokenSource>::parseExpressionElement() {
         }
         case TokenType::PAREN_OPEN:
             advance();
-            element = parseAddExpression();
+            element = parseOrExpression();
             requireToken(TokenType::PAREN_CLOSE);
             break;
         case TokenType::NUMBER: {
@@ -502,7 +479,6 @@ Type Parser<TokenSource>::parseTypeTokens() {
     }
 }
 
-//TODO check if this function name wasn't yet used -- here
 template <typename TokenSource>
 std::unique_ptr<FuncDef> Parser<TokenSource>::parseFuncDef() {
     if (currToken_.type != TokenType::KEYWORD_FUNC) {
@@ -512,7 +488,6 @@ std::unique_ptr<FuncDef> Parser<TokenSource>::parseFuncDef() {
 
     Token id = requireToken(TokenType::ID);
     requireToken(TokenType::PAREN_OPEN);
-    skipTokens(TokenType::END_OF_INSTRUCTION);
 
     // parse parameters
     std::vector<Variable> parameters;
@@ -542,8 +517,7 @@ std::unique_ptr<FuncDef> Parser<TokenSource>::parseFuncDef() {
             returnType = std::move(*funcResultType);
         }
     }
-    
-    skipTokens(TokenType::END_OF_INSTRUCTION);
+
     std::unique_ptr<InstructionBlock> body = parseInstructionBlock();
 
     requireToken(TokenType::END_OF_INSTRUCTION);

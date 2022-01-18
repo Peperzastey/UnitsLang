@@ -23,7 +23,6 @@ public:
         addPredefinedPrintFunc();
         for (auto &&func : funcDefs) {
             addFuncDef(std::move(func));
-            //TODO add function main() from instructions
         }
     }
     
@@ -32,22 +31,6 @@ public:
     const FuncDef* getFuncDef(const std::string &name) const {
         auto iter = funcDefs_.find(name);
         return (iter != funcDefs_.cend() ? iter->second.get() : nullptr);
-    }
-    
-    /*void printInstructionsTypes() const {
-        std::cout << "Num of instrs: " << instructions_.size()
-            << "\nInstr types:\n";
-        for (const auto &instr : instructions_) {
-            std::cout << "* " << instr->getInstrType() << '\n';
-        }
-    }*/
-
-    void printFunctions() const {
-        std::cout << "Num of func defs: " << funcDefs_.size()
-            << "\nFunc names:\n";
-        for (const auto &entry : funcDefs_) {
-            std::cout << "* " << entry.first << '\n';
-        }
     }
 
 private:

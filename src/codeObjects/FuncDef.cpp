@@ -8,7 +8,7 @@ std::optional<Value> FuncDef::call(Interpreter &interpreter, std::vector<Value> 
     interpreter.newFuncCallContext();
     if (!std::equal(args.cbegin(), args.cend(), params_.cbegin(), [&interpreter](const Value &arg, const Variable &param) {
             if (arg.type == param.getType()) {
-                interpreter.addVariable(param.getName(), std::move(arg)); //TODO can I move from arg during std::equal?
+                interpreter.addVariable(param.getName(), std::move(arg));
                 return true;
             }
             return false;
@@ -37,7 +37,7 @@ std::optional<Value> FuncDef::call(Interpreter &interpreter, std::vector<Value> 
             if (returnType_.getTypeClass() == Type::VOID && retVal.has_value()) {
                 interpreter.deleteFuncCallContext();
                 ErrorHandler::handleTypeMismatch("Value returned form function '" + name_ + "' does not match its return type");
-            } //TODO one if
+            }
             if (!retVal.has_value() || returnType_ != retVal->type) {
                 interpreter.deleteFuncCallContext();
                 ErrorHandler::handleTypeMismatch("Value returned form function '" + name_ + "' does not match its return type");

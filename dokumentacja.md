@@ -71,12 +71,11 @@ func fibonacci_speed_iterative (steps [1]) -> [m/s] {
     // zmienne lokalne
     elem0 = 0[m/s]
     elem1 = 1[m/s]
-    while steps > 0 {
-        temp = elem1
-        elem1 = elem0 + elem1
-        elem0 = elem1
-        steps--
-        // ++ i -- możliwe tylko dla wartości bez jednostek ([1])
+    count = 1
+    while count < steps {
+        elem1 = elem1 + elem0
+        elem0 = elem1 - elem0
+        count = count + 1
     }
     return elem1
 }
@@ -85,14 +84,14 @@ meters_after_16_steps = fibonacci_meters(16)
 // możliwość nadania z góry typu dla zmiennej, w tym wypadku jeśli
 // wartość przypisywanego wyrażenia nie ma zgodnego typu - rzucony
 // będzie błąd
-distance[m] = fibonacci_speed_iterative(20) * 16s
+distance[m] = fibonacci_speed_iterative(20) * 16[s]
 // elem0, elem1 i temp z ciała funkcji fibonacci_speed_iterative nie są tu widoczne
 ```
 
 Przykłady nieprawidłowych operacji (niezgodność jednostek):
 ```
-15m + 3s
-3 000s2 - 15s * 2ms / 0.5s
+15[m] + 3[s]
+3 000[s2] - 15[s] * 2[ms] / 0.5[s]
 ```
 
 ## Obsługiwane jednostki
@@ -205,8 +204,10 @@ oznaczenie_jednostki                    = '[', jednostka, ']' ;
 
 typ                                     = jednostka | skalar | 'bool' | 'str' ;
 
-wyrażenie                               = wyrażenie_log_and, { or_op, wyrażenie_log_and }
+wyrażenie                               = wyrażenie_log_or
                                         | string ;
+                                        
+wyrażenie_log_or                        = wyrażenie_log_and, { or_op, wyrażenie_log_and }
 
 wyrażenie_log_and                       = wyrażenie_log_eq, { and_op, wyrażenie_log_eq } ;
 
@@ -222,26 +223,11 @@ wyrażenie_multiplikatywne               = składnik, { mult_op, składnik } ;
 składnik                                = id
                                         | wartość
                                         | wywołanie_funkcji
-                                        | '(' wyrażenie ')' ;
+                                        | '(' wyrażenie_log_or ')' ;
 
 wartość                                 = liczba, [ oznaczenie_jednostki ] ;
                                         (* brak jednostki oznacza skalara *)
 
-//jednostka                               = jednostka_prosta
-//                                        | jednostka_złożona ;
-
-//jednostka_prosta                        = [ prefix ], jednostka_podstawowa, [ potega_jednostki ] ;
-
-//potega_jednostki                        = '2' | '3' ;
-
-//jednostka_złożona                       = wyrażenie_multiplikatywne_jednostkowe ;
-
-//wyrażenie_multiplikatywne_jednostkowe   = składnik_jednostkowy, { mult_op, składnik_jednostkowy } ;
-
-//składnik_jednostkowy                    = jednostka_prosta
-//                                        | '(' wyrażenie_multiplikatywne_jednostkowe ')' ;
-
--------
 jednostka                               = składnik_jednostkowy, { mult_op, składnik_jednostkowy } ;
 
 składnik_jednostkowy                    = jednostka_prosta
@@ -250,7 +236,6 @@ składnik_jednostkowy                    = jednostka_prosta
 jednostka_prosta                        = [ prefix ], jednostka_podstawowa, [ potega_jednostki ] ;
 
 potega_jednostki                        = '2' | '3' ;
--------
 
 przypisanie                             = id, '=', wyrażenie ;
 
@@ -270,8 +255,6 @@ lista_argumentów                        = [ argument, { ',', argument } ] ;
 argument                                = wyrażenie ;
 
 string                                  = ciąg_znaków_w_cudzysłowach ;
-
-//string                                  = ciąg_znaków_w_cudzysłowach, { ciąg_znaków_w_cudzysłowach } ;
 
 ciąg_znaków_w_cudzysłowach              = '"', { znak - '"' | escapowany_cudzysłów | odwołanie_do_zmiennej }, '"' ;
 

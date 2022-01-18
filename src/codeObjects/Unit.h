@@ -23,14 +23,6 @@ public:
     explicit Unit(::Unit unitToken) : isScalar_(false) {
         numerator_.insert({ unitToken.unit, unitToken });
     }
-    
-    //Unit(Unit &&) = default;
-    //Unit& operator=(Unit &&) = default;
-    
-    /*TypeClass getTypeClass() const override {
-        return TypeClass::UNIT;
-    }*/
-
 
     void combineWithUnit(Token op, const Unit &unit) {
         if (std::get<std::string>(op.value) == "*") {
@@ -82,8 +74,7 @@ public:
         }
         
     }
-    
-    //TODO set (in object) multiplier from prefix changes
+
     void multWithUnit(const Unit &unit) {
         combineWithUnit(Token{TokenType::OP_MULT, "*"}, unit);
     }
@@ -133,7 +124,6 @@ private:
                 ::Unit &top = numIt->second;
                 ::Unit &bottom = denIt->second;
                 if (top.prefix != bottom.prefix) {
-                    //TODO prefixes
                     ErrorHandler::handleFromParser("Cannot combine units with different prefixes");
                 }
                 top.power -= bottom.power;
@@ -156,31 +146,13 @@ private:
     }
 
 private:
-    // map beceuse the elements have to be ordered
+    // map, not unordered_map, beceuse the elements have to be ordered
     std::map<UnitType, ::Unit> numerator_;
     std::map<UnitType, ::Unit> denominator_;
     bool isScalar_;
     
     friend std::ostream& ::operator<<(std::ostream &os, const Unit &unit);
 };
-
-/*inline std::ostream& operator<<(std::ostream &os, const codeobj::Unit &unit) {
-    if (unit.isScalar()) {
-        return os;
-    }
-    os << "[(";
-    for (auto &&[t, u] : unit.numerator_) {
-        (void)t;
-        os << u << '*';
-    }
-    os << ") / (";
-    for (auto &&[t, u] : unit.denominator_) {
-        (void)t;
-        os << u << '*';
-    }
-    os << ")]";
-    return os;
-}*/
 
 } // namespace codeobj
 

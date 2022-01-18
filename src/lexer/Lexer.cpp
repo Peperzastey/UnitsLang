@@ -100,7 +100,6 @@ void Lexer::discardInstrBreak() {
 bool Lexer::consumeNewline(char c) {
     bool gotR = false;
     if (c == EOF) {
-        //TODO? unget
         return true;
     }
     if (c == '\r') {
@@ -145,6 +144,10 @@ Token Lexer::getToken() {
             return constructRelationalOp(c, charPos);
         case '!':
             return constructNotEq(c, charPos);
+        case '&':
+            return constructAnd(c, charPos);
+        case '|':
+            return constructOr(c, charPos);
         case '"':
             return constructString(c, charPos);
         case '(':
@@ -164,7 +167,6 @@ Token Lexer::getToken() {
         case EOF:
             return { TokenType::END_OF_STREAM, "", charPos };
         default: {
-            //ErrorHandler::handleFromLexer("Unknown lexeme");
             auto [line, col] = source_.getCurrentPosition();
             throw UnknownLexemeError(c, line, col);
         }
@@ -215,13 +217,28 @@ Token Lexer::constructNotEq(char c, const PosInStream &cPos) {
     return { TokenType::OP_EQ, "!=", cPos };
 }
 
+Token Lexer::constructAnd(char c, const PosInStream &cPos) {
+    c = source_.getChar();
+    if (c != '&') {
+        ErrorHandler::handleFromLexer("'&' not followed by '&'!");
+    }
+    return { TokenType::OP_AND, "&&", cPos };
+}
+
+Token Lexer::constructOr(char c, const PosInStream &cPos) {
+    c = source_.getChar();
+    if (c != '|') {
+        ErrorHandler::handleFromLexer("'|' not followed by '|'!");
+    }
+    return { TokenType::OP_OR, "||", cPos };
+}
+
 Token Lexer::constructString(char c, const PosInStream &cPos) {
     assert(c == '"');
     bool escaping = false;
     std::ostringstream buffer;
     unsigned int length = 0;
     PosInStream charPos;
-    //PosInStream textCharPos = source_.getCurrentPosition();
     String stringToken;
 
     while (true) {
@@ -243,7 +260,7 @@ Token Lexer::constructString(char c, const PosInStream &cPos) {
                     buffer.str("");
                     if (!text.empty()) {
                         stringToken.innerTokens.push_back({
-                                TokenType::TEXT_WITHIN_STRING, text //TODO position
+                                TokenType::TEXT_WITHIN_STRING, text
                             });
                     }
                         stringToken.innerTokens.push_back({
@@ -259,15 +276,6 @@ Token Lexer::constructString(char c, const PosInStream &cPos) {
                 }
                 escaping = false;
                 break;
-            /*case '}':
-                if (!escaping) {
-                    stringToken.innerTokens.emplace_back(
-                            TokenType::BRACKET_CLOSE, "", charPos
-                        );
-                    c = 0;
-                }
-                escaping = false;
-                break;*/
             case 'n':
                 if (escaping) {
                     c = '\n';
@@ -285,7 +293,7 @@ Token Lexer::constructString(char c, const PosInStream &cPos) {
                     std::string text = buffer.str();
                     if (!text.empty()) {
                         stringToken.innerTokens.push_back({
-                                TokenType::TEXT_WITHIN_STRING, text //TODO position
+                                TokenType::TEXT_WITHIN_STRING, text
                             });
                     }
                     return { TokenType::STRING, stringToken, cPos };

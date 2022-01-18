@@ -13,8 +13,7 @@ public:
     If(
         std::unique_ptr<Expression> cond,
         std::unique_ptr<InstructionBlock> positiveBlock,
-        //std::vector<std::unique_ptr<Instruction>> negativeBlock, //else == else if (true)
-        std::unique_ptr<If> elseIf //or vec of ElseIf
+        std::unique_ptr<If> elseIf
         )
         : cond_(std::move(cond))
         , positiveBlock_(std::move(positiveBlock))
@@ -27,7 +26,6 @@ public:
         , elseIf_(nullptr) {}
     
     InstrResult execute([[maybe_unused]] Interpreter &interpreter) const override {
-        //TODO new scope
         if (cond_) {
             Value condResult = cond_->calculate(interpreter);
             if (condResult.type.getTypeClass() != Type::BOOL) {

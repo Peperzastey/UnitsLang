@@ -50,10 +50,8 @@ struct FuncCallContext {
     }
 
     std::vector<Scope> scopeChain;
-    std::optional<Value> returnValue;
 };
 
-//TODO rename ExecutionContext
 class Interpreter {
 public:
     Interpreter(std::ostream &stdout, Program &programToExecute)
@@ -76,9 +74,6 @@ public:
     
     // adds variable in current scope
     void addVariable(const std::string &name, Value value) {
-        /*if (auto result = globalScope_.insert({ name, std::move(value) }); !result.second) {
-            ErrorHandler::handleVariableAlreadyDefined("Already defined in current scope");
-        }*/
         assert(!fccStack_.empty());
         if (!fccStack_.top().addVariable(name, std::move(value))) {
             ErrorHandler::handleVariableAlreadyDefined("Variable '" + name + "' already defined in current scope");
@@ -86,12 +81,6 @@ public:
     }
     
     void assignVariable(const std::string &name, Value value) {
-        //globalScope_.insert_or_assign(name, std::move(value));
-        /*if (auto iter = globalScope_.find(name); iter != globalScope_.end()) {
-            iter->second = std::move(value);
-        } else {
-            ErrorHandler::handleVariableNotDefined("Refernce to not-defined variable '" + name + "'");
-        }*/
         assert(!fccStack_.empty());
         if (fccStack_.top().assignVariable(name, std::move(value))) {
             return;
@@ -107,11 +96,6 @@ public:
     }
     
     std::optional<Value> getVariable(const std::string &name) const {
-        /*if (auto iter = globalScope_.find(name); iter != globalScope_.end()) {
-            return iter->second;
-        } else {
-            return std::nullopt;
-        }*/
         assert(!fccStack_.empty());
         std::optional<Value> val = fccStack_.top().getVariable(name);
         if (val) {
@@ -152,7 +136,6 @@ public:
         return temp;
     }
     
-    //TODO RAII
     void newFuncCallContext() {
         fccStack_.emplace();
         if (!mainContext_) {
@@ -168,7 +151,6 @@ public:
         fccStack_.pop();
     }
     
-    //TODO RAII
     void newScope() {
         assert(!fccStack_.empty());
         fccStack_.top().newScope();
@@ -206,8 +188,6 @@ private:
     FuncCallContext *mainContext_ = nullptr;
     // empty optional means void
     std::optional<Value> returnValue_;
-    //TODO stack of FuncCallContext-s with Scope chains inside
-    
 };
 
 #endif // TKOMSIUNITS_CODE_OBJECTS_INTERPRETER_H_INCLUDED

@@ -59,7 +59,6 @@ TEST(LexerTests, IdsThatStartLikeKeywords) {
     }
 }
 
-//TODO test automatically all combinations (like they are generated)
 TEST(LexerTests, Units) {
     std::array units = {
         std::pair{ "mm3", Unit{"m", UnitType::METER , 3} },

@@ -9,27 +9,31 @@
 #include <gtest/gtest.h>
 #include <iostream>
 
-/*TEST(InterpreterTests, ExpressionSingleValueCalculate) {
+TEST(InterpreterTests, ExpressionSingleValueCalculate) {
+    Program dummyProgram({}, {});
+    Interpreter dummyInterp(std::cout, dummyProgram);
     Unit unit{ "m", UnitType::METER, 2 };
     std::unique_ptr<Expression> expr = std::make_unique<Value>(5.0, Type(codeobj::Unit(unit)));
-    Value result = expr->calculate(interpreter);
+    Value result = expr->calculate(dummyInterp);
     ASSERT_EQ(Type::NUMBER, result.type.getTypeClass());
     EXPECT_EQ("5[(mm2)/()]", result.toString());
     EXPECT_EQ(5.0, result.asDouble());
 }
 
 TEST(InterpreterTests, SimpleExpressionCalculate) {
+    Program dummyProgram({}, {});
+    Interpreter dummyInterp(std::cout, dummyProgram);
     Unit unit{ "", UnitType::METER, 1 };
     auto val1 = std::make_unique<Value>(3.5, Type(codeobj::Unit(unit)));
     auto val2 = std::make_unique<Value>(5.0, Type(codeobj::Unit(unit)));
     std::unique_ptr<Expression> expr = std::make_unique<BinaryExpression>(
             std::move(val1), Token{TokenType::OP_ADD, "-"}, std::move(val2)
         );
-    Value result = expr->calculate(interpreter);
+    Value result = expr->calculate(dummyInterp);
     ASSERT_EQ(Type::NUMBER, result.type.getTypeClass());
     EXPECT_EQ("-1.5[(m)/()]", result.toString());
     EXPECT_EQ(-1.5, result.asDouble());
-}*/
+}
 
 TEST(InterpreterTests, VarDefinition) {
     Unit resultUnit{ "", UnitType::METER, 1 };
@@ -42,7 +46,6 @@ TEST(InterpreterTests, VarDefinition) {
     Interpreter interp(std::cout, *program.get());
     int result = interp.executeProgram();
     EXPECT_EQ(0, result);
-    /*EXPECT_EQ(Value(3.0, codeobj::Unit(resultUnit)), interp.getVariable(varName));*/
 }
 
 TEST(InterpreterTests, VarDefinitionWithTypeDecl) {
@@ -56,7 +59,6 @@ TEST(InterpreterTests, VarDefinitionWithTypeDecl) {
     Interpreter interp(std::cout, *program.get());
     int result = interp.executeProgram();
     EXPECT_EQ(0, result);
-    /*EXPECT_EQ(Value(3.0, codeobj::Unit(resultUnit)), interp.getVariable(varName));*/
 }
 
 TEST(InterpreterTests, VarAssignment) {
@@ -71,7 +73,6 @@ TEST(InterpreterTests, VarAssignment) {
     Interpreter interp(std::cout, *program.get());
     int result = interp.executeProgram();
     EXPECT_EQ(0, result);
-    /*EXPECT_EQ(Value(45.0, codeobj::Unit(resultUnit)), interp.getVariable(varName));*/
 }
 
 TEST(InterpreterTests, IfTrue) {
@@ -84,7 +85,6 @@ TEST(InterpreterTests, IfTrue) {
     Interpreter interp(std::cout, *program.get());
     int result = interp.executeProgram();
     EXPECT_EQ(0, result);
-    /*EXPECT_EQ(Value(5, codeobj::Unit(resultUnit)), interp.getVariable("a"));*/
 }
 
 TEST(InterpreterTests, IfFalseElse) {
@@ -96,7 +96,6 @@ TEST(InterpreterTests, IfFalseElse) {
     Interpreter interp(std::cout, *program.get());
     int result = interp.executeProgram();
     EXPECT_EQ(0, result);
-    /*EXPECT_EQ(Value(0, codeobj::Unit()), interp.getVariable("a"));*/
 }
 
 TEST(InterpreterTests, IfElifChainExecutesFirstTrueElif) {
@@ -108,7 +107,6 @@ TEST(InterpreterTests, IfElifChainExecutesFirstTrueElif) {
     Interpreter interp(std::cout, *program.get());
     int result = interp.executeProgram();
     EXPECT_EQ(0, result);
-    /*EXPECT_EQ(Value(3, codeobj::Unit()), interp.getVariable("a"));*/
 }
 
 TEST(InterpreterTests, IfFalseElifFalseChainExecutesElse) {
@@ -120,8 +118,6 @@ TEST(InterpreterTests, IfFalseElifFalseChainExecutesElse) {
     Interpreter interp(std::cout, *program.get());
     int result = interp.executeProgram();
     EXPECT_EQ(0, result);
-    /*EXPECT_EQ(Value(2, codeobj::Unit()), interp.getVariable("b"));
-    EXPECT_EQ(std::nullopt, interp.getVariable("a"));*/
 }
 
 TEST(InterpreterTests, VarReference) {
@@ -133,7 +129,6 @@ TEST(InterpreterTests, VarReference) {
     Interpreter interp(std::cout, *program.get());
     int result = interp.executeProgram();
     EXPECT_EQ(0, result);
-    /*EXPECT_EQ(Value(false), interp.getVariable("a"));*/
 }
 
 TEST(InterpreterTests, While) {
@@ -148,8 +143,6 @@ TEST(InterpreterTests, While) {
     Interpreter interp(std::cout, *program.get());
     int result = interp.executeProgram();
     EXPECT_EQ(0, result);
-    /*EXPECT_EQ(Value(0, codeobj::Unit()), interp.getVariable("a"));
-    EXPECT_EQ(Value(3, codeobj::Unit()), interp.getVariable("b"));*/
 }
 
 TEST(InterpreterTests, WhileBreak) {
@@ -166,9 +159,6 @@ TEST(InterpreterTests, WhileBreak) {
     Interpreter interp(std::cout, *program.get());
     int result = interp.executeProgram();
     EXPECT_EQ(0, result);
-    /*EXPECT_EQ(Value(1, codeobj::Unit()), interp.getVariable("a"));
-    EXPECT_EQ(Value(2, codeobj::Unit()), interp.getVariable("b"));
-    EXPECT_EQ(Value(7, codeobj::Unit()), interp.getVariable("c"));*/
 }
 
 TEST(InterpreterTests, WhileContinue) {
@@ -186,9 +176,6 @@ TEST(InterpreterTests, WhileContinue) {
     Interpreter interp(std::cout, *program.get());
     int result = interp.executeProgram();
     EXPECT_EQ(0, result);
-    /*EXPECT_EQ(Value(0, codeobj::Unit()), interp.getVariable("a"));
-    EXPECT_EQ(Value(1, codeobj::Unit()), interp.getVariable("b"));
-    EXPECT_EQ(Value(7, codeobj::Unit()), interp.getVariable("c"));*/
 }
 
 TEST(InterpreterTests, WhileReturn) {
@@ -205,9 +192,6 @@ TEST(InterpreterTests, WhileReturn) {
     Interpreter interp(std::cout, *program.get());
     int result = interp.executeProgram();
     EXPECT_EQ(2, result);
-    /*EXPECT_EQ(Value(1, codeobj::Unit()), interp.getVariable("a"));
-    EXPECT_EQ(Value(2, codeobj::Unit()), interp.getVariable("b"));
-    EXPECT_EQ(std::nullopt, interp.getVariable("c"));*/
 }
 
 TEST(InterpreterTests, FunctionRecursionFibonacci) {
@@ -353,4 +337,47 @@ TEST(InterpreterTests, MultiplicatingUnitsCreatesNewUnit) {
     Interpreter interp(std::cout,  *program.get());
     int result = interp.executeProgram();
     EXPECT_EQ(0, result);
+}
+
+TEST(InterpreterTests, OperatorEqualToWorksWithNumbers) {
+    std::string input =
+        "if 5[m] == 5 * 1[m] {\n"
+        "    return 5\n"
+        "}\n";
+    std::unique_ptr<Source> src = std::make_unique<StringSource>(input);
+    Lexer lexer(*src);
+    Parser parser(lexer);
+    std::unique_ptr<Program> program = parser.parse();
+    Interpreter interp(std::cout,  *program.get());
+    int result = interp.executeProgram();
+    EXPECT_EQ(5, result);
+}
+
+TEST(InterpreterTests, OperatorEqualToWorksWithBools) {
+    std::string input =
+        "if true == (5 * 1[m] > 3[m]) {\n"
+        "    return 5\n"
+        "}\n";
+    std::unique_ptr<Source> src = std::make_unique<StringSource>(input);
+    Lexer lexer(*src);
+    Parser parser(lexer);
+    std::unique_ptr<Program> program = parser.parse();
+    Interpreter interp(std::cout,  *program.get());
+    int result = interp.executeProgram();
+    EXPECT_EQ(5, result);
+}
+
+TEST(InterpreterTests, AllOperators) {
+    std::string input =
+        "if false || (5 - 2) * 1[m] + 2[m] > 3[m] && 2 <= 2[s] / 1[s] && \\\n"
+        "    true != false && false == false {"
+        "    return 5\n"
+        "}\n";
+    std::unique_ptr<Source> src = std::make_unique<StringSource>(input);
+    Lexer lexer(*src);
+    Parser parser(lexer);
+    std::unique_ptr<Program> program = parser.parse();
+    Interpreter interp(std::cout,  *program.get());
+    int result = interp.executeProgram();
+    EXPECT_EQ(5, result);
 }

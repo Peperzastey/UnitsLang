@@ -16,9 +16,6 @@ public:
         static const std::string INSTR_TYPE = "Continue";
         return INSTR_TYPE;
     }
-    
-private:
-    //While &parent;
 };
 
 #endif // TKOMSIUNITS_CODE_OBJECTS_CONTINUE_H_INCLUDED

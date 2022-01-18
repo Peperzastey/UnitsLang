@@ -28,6 +28,8 @@ inline std::ostream& operator<<(std::ostream &os, TokenType tokenType) {
         "OP_SUFFIX",
         "OP_EQ",
         "OP_REL",
+        "OP_AND",
+        "OP_OR",
         "ASSIGN",
         "PAREN_OPEN",
         "PAREN_CLOSE",

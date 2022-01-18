@@ -2,6 +2,7 @@ if(BUILD_TESTING)
     add_executable(CodeObjectsTests
         codeobjects_tests.cpp
         Instruction.cpp
+        BinaryExpression.cpp
         Program.cpp
         FuncDef.cpp
         InstructionBlock.cpp
@@ -23,6 +24,7 @@ if(BUILD_TESTING)
     add_executable(InterpreterTests
         interpreter_tests.cpp
         Instruction.cpp
+        BinaryExpression.cpp
         Program.cpp
         FuncDef.cpp
         InstructionBlock.cpp

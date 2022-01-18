@@ -32,6 +32,8 @@ protected:
     std::unique_ptr<Instruction> parseInstruction();
     std::unique_ptr<InstructionBlock> parseInstructionBlock();
     std::unique_ptr<Expression> parseExpression();
+    std::unique_ptr<Expression> parseOrExpression();
+    std::unique_ptr<Expression> parseAndExpression();
     std::unique_ptr<Expression> parseEqualExpression();
     std::unique_ptr<Expression> parseRelExpression();
     std::unique_ptr<Expression> parseAddExpression();
@@ -44,7 +46,6 @@ protected:
     codeobj::Unit parseUnitElementTokens();
     std::optional<Type> parseType();
     Type parseTypeTokens();
-    //std::unique_ptr<codeObj::Unit> parseUnitExpressionElement()
     
     std::optional<Variable> parseFuncParameter();
 
@@ -56,7 +57,13 @@ protected:
     Token requireToken(TokenType expected);
     template <std::size_t N>
     void reportUnexpectedToken(const std::array<TokenType, N> &expected);
-    void skipTokens(TokenType toBeSkipped);
+
+private:
+    typedef std::unique_ptr<Expression> (Parser::*ParseExprFunc)();
+    std::unique_ptr<Expression> parseXXXBinaryExpression(
+        ParseExprFunc subExprFunc, TokenType opType,
+        const std::string &exprName, const std::string &subExprName
+    );
 
 private:
     TokenSource &lexer_;

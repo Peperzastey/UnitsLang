@@ -42,6 +42,8 @@ public:
                 return "[void]";
             case STRING:
                 return "[str]";
+            default:
+                return "<unknown type>";
         }
     }
     

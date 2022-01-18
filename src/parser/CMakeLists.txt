@@ -4,6 +4,7 @@ if(BUILD_TESTING)
         ../codeObjects/Instruction.cpp
         ../codeObjects/InstructionBlock.cpp
         ../codeObjects/FuncDef.cpp
+        ../codeObjects/BinaryExpression.cpp
         ../lexer/Lexer.cpp
         ../source/Source.cpp
         ../source/StringSource.cpp
