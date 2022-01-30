@@ -1,3 +1,4 @@
+#include "codeObjects/Interpreter.h"
 #include "parser/Parser.h"
 #include "lexer/Lexer.h"
 #include "source/Source.h"
@@ -17,12 +18,13 @@ int main(int argc, char** argv) {
     Lexer lexer(*src);
     Parser parser(lexer);
 
+    std::unique_ptr<Program> program = nullptr;
     try {
-        std::unique_ptr<Program> program = parser.parse();
-        program->printFunctions();
-        program->printInstructionsTypes();
+        program = parser.parse();
     } catch (const std::exception &ex) {
         std::cerr << ex.what() << std::endl;
+        return 1;
     }
-    return 0;
+    Interpreter interp(std::cout, *program.get());
+    return interp.executeProgram();
 }

@@ -5,16 +5,15 @@
 #include "lexer/Lexer.h"
 #include <string>
 
-class Expression : public Instruction {
+class Value;
+class Interpreter;
+
+class Expression {
 public:
     Expression() {}
     virtual ~Expression() {}
     
-    const std::string& getInstrType() const override {
-        static const std::string INSTR_TYPE = "Expression";
-        return INSTR_TYPE;
-    }
-    
+    virtual Value calculate([[maybe_unused]] Interpreter &interpreter) = 0;
     virtual std::string getRPN() const = 0;
 };
 

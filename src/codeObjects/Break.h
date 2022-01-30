@@ -6,15 +6,16 @@
 
 class Break : public Instruction {
 public:
-    Break(/*While &parent*/) {}
+    Break() {}
+    
+    InstrResult execute([[maybe_unused]] Interpreter &interpreter) const override {
+        return InstrResult::BREAK;
+    }
     
     const std::string& getInstrType() const {
         static const std::string INSTR_TYPE = "Break";
         return INSTR_TYPE;
     }
-    
-private:
-    //While &parent;
 };
 
 #endif // TKOMSIUNITS_CODE_OBJECTS_BREAK_H_INCLUDED

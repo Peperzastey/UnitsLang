@@ -2,6 +2,9 @@ if(BUILD_TESTING)
     add_executable(ParserTests
         parser_tests.cpp
         ../codeObjects/Instruction.cpp
+        ../codeObjects/InstructionBlock.cpp
+        ../codeObjects/FuncDef.cpp
+        ../codeObjects/BinaryExpression.cpp
         ../lexer/Lexer.cpp
         ../source/Source.cpp
         ../source/StringSource.cpp
@@ -12,5 +15,10 @@ if(BUILD_TESTING)
         gtest
         gtest_main
         Threads::Threads
+    )
+    
+    add_test(
+        NAME ParserTests
+        COMMAND ParserTests
     )
 endif()

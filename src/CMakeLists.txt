@@ -4,4 +4,9 @@ add_executable(main
     source/Source.cpp
     lexer/Lexer.cpp
     codeObjects/Instruction.cpp
+    codeObjects/InstructionBlock.cpp
+    codeObjects/BinaryExpression.cpp
+    codeObjects/InternalPrintInstr.cpp
+    codeObjects/FuncDef.cpp
+    codeObjects/Program.cpp
 )

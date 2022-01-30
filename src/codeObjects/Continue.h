@@ -6,15 +6,16 @@
 
 class Continue : public Instruction {
 public:
-    Continue(/*While &parent*/) {}
+    Continue() {}
+    
+    InstrResult execute([[maybe_unused]] Interpreter &interpreter) const override {
+        return InstrResult::CONTINUE;
+    }
     
     const std::string& getInstrType() const {
         static const std::string INSTR_TYPE = "Continue";
         return INSTR_TYPE;
     }
-    
-private:
-    //While &parent;
 };
 
 #endif // TKOMSIUNITS_CODE_OBJECTS_CONTINUE_H_INCLUDED
