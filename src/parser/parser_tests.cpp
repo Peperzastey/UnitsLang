@@ -3,6 +3,10 @@
 #include "Parser.h"
 #include "utils/printUtils.h"
 #include "lexer/Lexer.h"
+#include "codeObjects/Return.h"
+#include "codeObjects/Break.h"
+#include "codeObjects/Continue.h"
+
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -48,7 +52,7 @@ const std::unordered_map<std::string, Token> tokens {
     { "while"    , {TokenType::KEYWORD_WHILE      , ""  } }
 };
 
-class MockLexer {
+class MockLexer : public TokenSource {
 public:
     explicit MockLexer(const std::string &tokensStr)
         : tokenSeq_{} {
@@ -59,7 +63,7 @@ public:
         }
     }
 
-    Token getToken() {
+    Token getToken() override {
         if (pos < tokenSeq_.size()) {
             return tokenSeq_[pos++];
         }
@@ -71,7 +75,7 @@ private:
     std::size_t pos = 0;
 };
 
-class TestParser : private Parser<MockLexer> {
+class TestParser : private Parser {
 public:
     using Parser::Parser;
     using Parser::advance;
@@ -85,19 +89,6 @@ public:
     using Parser::parseType;
 };
 
-class TestParserNotMock : private Parser<Lexer> {
-public:
-    using Parser::Parser;
-    using Parser::advance;
-    using Parser::parseFuncDef;
-    using Parser::parseInstruction;
-    using Parser::parseExpression;
-    using Parser::parseAddExpression;
-    using Parser::parseMultExpression;
-    using Parser::parseExpressionElement;
-    using Parser::parseUnit;
-    using Parser::parseType;
-};
 
 TEST(ParserTests, SimpleAddition) {
     std::string input = "1 + 1";
@@ -267,7 +258,7 @@ TEST(ParserTests, FuncDefSingleParameter) {
 
     std::unique_ptr<Source> src = std::make_unique<StringSource>(input);
     Lexer lexer(*src);
-    TestParserNotMock parser(lexer);
+    TestParser parser(lexer);
     parser.advance();
     std::unique_ptr<FuncDef> funcDef = parser.parseFuncDef();
     ASSERT_NE(nullptr, funcDef);
@@ -280,7 +271,7 @@ TEST(ParserTests, FuncDefMultipleParameters) {
 
     std::unique_ptr<Source> src = std::make_unique<StringSource>(input);
     Lexer lexer(*src);
-    TestParserNotMock parser(lexer);
+    TestParser parser(lexer);
     parser.advance();
     std::unique_ptr<FuncDef> funcDef = parser.parseFuncDef();
     ASSERT_NE(nullptr, funcDef);
@@ -299,7 +290,7 @@ TEST(ParserTests, FuncDefIncorrectParameterListFormatThrows) {
     for (const auto &input : inputs) {
         std::unique_ptr<Source> src = std::make_unique<StringSource>(input);
         Lexer lexer(*src);
-        TestParserNotMock parser(lexer);
+        TestParser parser(lexer);
         parser.advance();
         EXPECT_THROW({
                 std::unique_ptr<FuncDef> funcDef = parser.parseFuncDef();
@@ -315,7 +306,7 @@ TEST(ParserTests, FuncDefReturnTypeVoid) {
 
     std::unique_ptr<Source> src = std::make_unique<StringSource>(input);
     Lexer lexer(*src);
-    TestParserNotMock parser(lexer);
+    TestParser parser(lexer);
     parser.advance();
     std::unique_ptr<FuncDef> funcDef = parser.parseFuncDef();
     ASSERT_NE(nullptr, funcDef);
@@ -330,7 +321,7 @@ TEST(ParserTests, FuncDefReturnTypeBool) {
 
     std::unique_ptr<Source> src = std::make_unique<StringSource>(input);
     Lexer lexer(*src);
-    TestParserNotMock parser(lexer);
+    TestParser parser(lexer);
     parser.advance();
     std::unique_ptr<FuncDef> funcDef = parser.parseFuncDef();
     ASSERT_NE(nullptr, funcDef);
@@ -345,7 +336,7 @@ TEST(ParserTests, FuncDefReturnTypeScalar) {
 
     std::unique_ptr<Source> src = std::make_unique<StringSource>(input);
     Lexer lexer(*src);
-    TestParserNotMock parser(lexer);
+    TestParser parser(lexer);
     parser.advance();
     std::unique_ptr<FuncDef> funcDef = parser.parseFuncDef();
     ASSERT_NE(nullptr, funcDef);
@@ -361,7 +352,7 @@ TEST(ParserTests, FuncDefReturnTypeUnit) {
 
     std::unique_ptr<Source> src = std::make_unique<StringSource>(input);
     Lexer lexer(*src);
-    TestParserNotMock parser(lexer);
+    TestParser parser(lexer);
     parser.advance();
     std::unique_ptr<FuncDef> funcDef = parser.parseFuncDef();
     ASSERT_NE(nullptr, funcDef);
@@ -390,7 +381,7 @@ TEST(ParserTests, FuncCallSingleArgument) {
 
     std::unique_ptr<Source> src = std::make_unique<StringSource>(input);
     Lexer lexer(*src);
-    TestParserNotMock parser(lexer);
+    TestParser parser(lexer);
     parser.advance();
     std::unique_ptr<Instruction> instr = parser.parseInstruction();
     FuncCall *funcCall = dynamic_cast<FuncCall *>(instr.get());
@@ -404,7 +395,7 @@ TEST(ParserTests, FuncCallMultipleArguments) {
 
     std::unique_ptr<Source> src = std::make_unique<StringSource>(input);
     Lexer lexer(*src);
-    TestParserNotMock parser(lexer);
+    TestParser parser(lexer);
     parser.advance();
     std::unique_ptr<Instruction> instr = parser.parseInstruction();
     FuncCall *funcCall = dynamic_cast<FuncCall *>(instr.get());
@@ -424,7 +415,7 @@ TEST(ParserTests, FuncCallIncorrectArgumentListFormatThrows) {
     for (const auto &input : inputs) {
         std::unique_ptr<Source> src = std::make_unique<StringSource>(input);
         Lexer lexer(*src);
-        TestParserNotMock parser(lexer);
+        TestParser parser(lexer);
         parser.advance();
         EXPECT_THROW({
                 std::unique_ptr<Instruction> instr = parser.parseInstruction();
@@ -529,7 +520,7 @@ TEST(ParserTests, SimpleUnits) {
     for (const auto &[str, expectedStr] : units) {
         std::unique_ptr<Source> src = std::make_unique<StringSource>(str);
         Lexer lexer(*src);
-        TestParserNotMock parser(lexer);
+        TestParser parser(lexer);
         parser.advance();
         codeobj::Unit unit = parser.parseUnit();
         EXPECT_EQ(expectedStr, unit.toString()) << "not met for: " << str;
@@ -547,7 +538,7 @@ TEST(ParserTests, NumbersWithSimpleUnits) {
     for (const auto &[str, expectedStr] : inputs) {
         std::unique_ptr<Source> src = std::make_unique<StringSource>(str);
         Lexer lexer(*src);
-        TestParserNotMock parser(lexer);
+        TestParser parser(lexer);
         parser.advance();
         std::unique_ptr<Expression> expr = parser.parseExpression();
         EXPECT_EQ(expectedStr, expr->getRPN()) << "not met for: " << str;
@@ -581,7 +572,7 @@ TEST(ParserTests, UnitType) {
     for (const auto &[str, expectedStr, isScalar] : types) {
         std::unique_ptr<Source> src = std::make_unique<StringSource>(str);
         Lexer lexer(*src);
-        TestParserNotMock parser(lexer);
+        TestParser parser(lexer);
         parser.advance();
         std::optional<Type> type = parser.parseType();
         ASSERT_TRUE(type.has_value());
@@ -594,7 +585,7 @@ TEST(ParserTests, UnitType) {
 TEST(ParserTests, BoolType) {
     std::unique_ptr<Source> src = std::make_unique<StringSource>("[bool]");
     Lexer lexer(*src);
-    TestParserNotMock parser(lexer);
+    TestParser parser(lexer);
     parser.advance();
     std::optional<Type> type = parser.parseType();
     ASSERT_TRUE(type.has_value());
@@ -612,7 +603,7 @@ TEST(ParserTests, ScalarTypeIsOnly1InSquares) {
     for (const auto &[str, expectedStr, isCorrect] : inputs) {
         std::unique_ptr<Source> src = std::make_unique<StringSource>(str);
         Lexer lexer(*src);
-        TestParserNotMock parser(lexer);
+        TestParser parser(lexer);
         parser.advance();
         if (!isCorrect) {
             EXPECT_THROW({

@@ -2,6 +2,7 @@ if(BUILD_TESTING)
     add_executable(LexerTests
         lexer_tests.cpp
         Lexer.cpp
+        Token.cpp
         ../source/Source.cpp
         ../source/StringSource.cpp
     )

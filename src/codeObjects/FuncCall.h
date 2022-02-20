@@ -39,30 +39,10 @@ public:
         return name_;
     }
     
-    std::string getRPN() const override {
-        std::string output = name_ + '(';
-        if (!args_.empty()) {
-            output += args_.front()->getRPN();
-            for (auto it = args_.cbegin() + 1; it != args_.cend(); ++it) {
-                output += ',' + (*it)->getRPN();
-            }  
-        }
-        output += ')';
-        return output;
-    }
+    std::string getRPN() const override;
 
 private:
-    std::optional<Value> doCall(Interpreter &interpreter) const {
-        const FuncDef *funcDef = interpreter.getFuncDef(name_);
-
-        std::vector<Value> argVals;
-        argVals.reserve(args_.size());
-        for (auto &&arg : args_) {
-            argVals.push_back(arg->calculate(interpreter));
-        }
-        
-        return funcDef->call(interpreter, std::move(argVals));
-    }
+    std::optional<Value> doCall(Interpreter &interpreter) const;
 
 private:
     const std::string name_;

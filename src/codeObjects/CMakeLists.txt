@@ -7,6 +7,13 @@ if(BUILD_TESTING)
         FuncDef.cpp
         InstructionBlock.cpp
         InternalPrintInstr.cpp
+        FuncCall.cpp
+        If.cpp
+        Interpreter.cpp
+        Unit.cpp
+        VarDefOrAssignment.cpp
+        While.cpp
+        ../lexer/Token.cpp
     )
 
     target_link_libraries(CodeObjectsTests
@@ -29,9 +36,17 @@ if(BUILD_TESTING)
         FuncDef.cpp
         InstructionBlock.cpp
         InternalPrintInstr.cpp
+        ../parser/Parser.cpp
         ../lexer/Lexer.cpp
+        ../lexer/Token.cpp
         ../source/Source.cpp
         ../source/StringSource.cpp
+        FuncCall.cpp
+        If.cpp
+        Interpreter.cpp
+        Unit.cpp
+        VarDefOrAssignment.cpp
+        While.cpp
     )
 
     target_link_libraries(InterpreterTests

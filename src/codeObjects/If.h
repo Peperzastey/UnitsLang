@@ -25,25 +25,7 @@ public:
         , positiveBlock_(std::move(positiveBlock))
         , elseIf_(nullptr) {}
     
-    InstrResult execute([[maybe_unused]] Interpreter &interpreter) const override {
-        if (cond_) {
-            Value condResult = cond_->calculate(interpreter);
-            if (condResult.type.getTypeClass() != Type::BOOL) {
-                ErrorHandler::handleTypeMismatch("Expression used as If condition must result in bool value");
-            }
-            if (condResult.asBool()) {
-                // True
-                return positiveBlock_->execute(interpreter);
-            } else if (elseIf_) {
-                // False
-                return elseIf_->execute(interpreter);
-            }
-            return InstrResult::NORMAL;
-        } else {
-            // Else
-            return positiveBlock_->execute(interpreter);
-        }
-    }
+    InstrResult execute([[maybe_unused]] Interpreter &interpreter) const override;
     
     const std::string& getInstrType() const {
         static const std::string INSTR_TYPE = "If";

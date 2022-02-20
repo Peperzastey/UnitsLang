@@ -3,10 +3,18 @@ add_executable(main
     source/FileSource.cpp
     source/Source.cpp
     lexer/Lexer.cpp
+    lexer/Token.cpp
+    parser/Parser.cpp
     codeObjects/Instruction.cpp
     codeObjects/InstructionBlock.cpp
     codeObjects/BinaryExpression.cpp
     codeObjects/InternalPrintInstr.cpp
     codeObjects/FuncDef.cpp
     codeObjects/Program.cpp
+    codeObjects/FuncCall.cpp
+    codeObjects/If.cpp
+    codeObjects/Interpreter.cpp
+    codeObjects/Unit.cpp
+    codeObjects/VarDefOrAssignment.cpp
+    codeObjects/While.cpp
 )

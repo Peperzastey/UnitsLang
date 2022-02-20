@@ -1,5 +1,4 @@
-#ifndef TKOMSIUNITS_PARSER_HPP_INCLUDED
-#define TKOMSIUNITS_PARSER_HPP_INCLUDED
+#include "Parser.h"
 
 #include "codeObjects/VarReference.h"
 #include "codeObjects/Value.h"
@@ -13,18 +12,16 @@
 #include <vector>
 #include <sstream>
 
-template <typename TokenSource>
-Parser<TokenSource>::Parser(TokenSource &lexer)
-    : lexer_(lexer) {
+Parser::Parser(TokenSource &tokenSource)
+    : tokenSource_(tokenSource) {
     }
 
 // advance to next Token but skip empty lines and newlines after '(' and '{'
-template <typename TokenSource>
-void Parser<TokenSource>::advance() {
+void Parser::advance() {
     Token prev;
     do {
         prev = currToken_;
-        currToken_ = lexer_.getToken();
+        currToken_ = tokenSource_.getToken();
     } while (currToken_.type == TokenType::END_OF_INSTRUCTION
         && (prev.type == TokenType::END_OF_INSTRUCTION
             || prev.type == TokenType::PAREN_OPEN
@@ -32,8 +29,7 @@ void Parser<TokenSource>::advance() {
     );
 }
 
-template <typename TokenSource>
-Token Parser<TokenSource>::requireToken(TokenType expected) {
+Token Parser::requireToken(TokenType expected) {
     if (currToken_.type != expected) {
         reportUnexpectedToken(std::array{expected});
     }
@@ -42,9 +38,8 @@ Token Parser<TokenSource>::requireToken(TokenType expected) {
     return token;
 }
 
-template <typename TokenSource>
 template <std::size_t N>
-void Parser<TokenSource>::reportUnexpectedToken(const std::array<TokenType, N> &expected) {
+void Parser::reportUnexpectedToken(const std::array<TokenType, N> &expected) {
     std::cout << "unexpected token\n";
     std::ostringstream os;
     os << "Unexpected token: {" << currToken_ << "}, expecting: [";
@@ -55,8 +50,7 @@ void Parser<TokenSource>::reportUnexpectedToken(const std::array<TokenType, N> &
     ErrorHandler::handleFromParser(os.str());
 }
 
-template <typename TokenSource>
-std::unique_ptr<Program> Parser<TokenSource>::parse() {
+std::unique_ptr<Program> Parser::parse() {
     std::unique_ptr<Instruction> instr;
     std::unique_ptr<FuncDef> funcDef;
     std::vector<std::unique_ptr<Instruction>> instructions;
@@ -78,8 +72,7 @@ std::unique_ptr<Program> Parser<TokenSource>::parse() {
         );
 }
 
-template <typename TokenSource>
-std::unique_ptr<Instruction> Parser<TokenSource>::parseInstruction() {
+std::unique_ptr<Instruction> Parser::parseInstruction() {
     std::unique_ptr<Instruction> instr = nullptr; 
     
     switch (currToken_.type) {
@@ -135,8 +128,7 @@ std::unique_ptr<Instruction> Parser<TokenSource>::parseInstruction() {
     return instr;
 }
 
-template <typename TokenSource>
-std::unique_ptr<InstructionBlock> Parser<TokenSource>::parseInstructionBlock() {
+std::unique_ptr<InstructionBlock> Parser::parseInstructionBlock() {
     requireToken(TokenType::BRACKET_OPEN);
     std::vector<std::unique_ptr<Instruction>> block;
     while (std::unique_ptr<Instruction> instr = parseInstruction()) {
@@ -146,8 +138,7 @@ std::unique_ptr<InstructionBlock> Parser<TokenSource>::parseInstructionBlock() {
     return std::make_unique<InstructionBlock>(std::move(block));
 }
 
-template <typename TokenSource>
-std::unique_ptr<FuncCall> Parser<TokenSource>::tryParseFuncCall(Token id) {
+std::unique_ptr<FuncCall> Parser::tryParseFuncCall(Token id) {
     assert(id.type == TokenType::ID);
     if (currToken_.type != TokenType::PAREN_OPEN) {
         return nullptr;
@@ -173,8 +164,7 @@ std::unique_ptr<FuncCall> Parser<TokenSource>::tryParseFuncCall(Token id) {
     return std::make_unique<FuncCall>(std::get<std::string>(id.value), std::move(arguments));
 }
 
-template <typename TokenSource>
-std::unique_ptr<VarDefOrAssignment> Parser<TokenSource>::tryParseVarDefOrAssignment(Token id) {
+std::unique_ptr<VarDefOrAssignment> Parser::tryParseVarDefOrAssignment(Token id) {
     assert(id.type == TokenType::ID);
     
     //optional type designation
@@ -193,8 +183,7 @@ std::unique_ptr<VarDefOrAssignment> Parser<TokenSource>::tryParseVarDefOrAssignm
     return std::make_unique<VarDefOrAssignment>(std::get<std::string>(id.value), std::move(expr), std::move(type));
 }
 
-template <typename TokenSource>
-std::unique_ptr<If> Parser<TokenSource>::tryParseIfInstr() {
+std::unique_ptr<If> Parser::tryParseIfInstr() {
     std::unique_ptr<Expression> cond = parseExpression();
 
     std::unique_ptr<InstructionBlock> positiveBlock = parseInstructionBlock();
@@ -219,8 +208,7 @@ std::unique_ptr<If> Parser<TokenSource>::tryParseIfInstr() {
     );
 }
 
-template <typename TokenSource>
-std::unique_ptr<While> Parser<TokenSource>::tryParseWhileInstr() {
+std::unique_ptr<While> Parser::tryParseWhileInstr() {
     std::unique_ptr<Expression> cond = parseExpression();
     std::unique_ptr<InstructionBlock> body = parseInstructionBlock();
     return std::make_unique<While>(
@@ -229,8 +217,7 @@ std::unique_ptr<While> Parser<TokenSource>::tryParseWhileInstr() {
     );
 }
 
-template <typename TokenSource>
-std::unique_ptr<Expression> Parser<TokenSource>::parseExpression() {
+std::unique_ptr<Expression> Parser::parseExpression() {
     switch (currToken_.type) {
         case TokenType::STRING:
             return parseString();
@@ -239,8 +226,7 @@ std::unique_ptr<Expression> Parser<TokenSource>::parseExpression() {
     }
 }
 
-template <typename TokenSource>
-std::unique_ptr<Expression> Parser<TokenSource>::parseXXXBinaryExpression(
+std::unique_ptr<Expression> Parser::parseXXXBinaryExpression(
         ParseExprFunc subExprFunc, TokenType opType,
         const std::string &exprName, const std::string &subExprName
     ) {
@@ -266,32 +252,28 @@ std::unique_ptr<Expression> Parser<TokenSource>::parseXXXBinaryExpression(
     return leftOperand;
 }
 
-template <typename TokenSource>
-std::unique_ptr<Expression> Parser<TokenSource>::parseOrExpression() {
+std::unique_ptr<Expression> Parser::parseOrExpression() {
     return parseXXXBinaryExpression(
             &Parser::parseAndExpression, TokenType::OP_OR,
             "OrExpression", "AndExpression"
         );
 }
 
-template <typename TokenSource>
-std::unique_ptr<Expression> Parser<TokenSource>::parseAndExpression() {
+std::unique_ptr<Expression> Parser::parseAndExpression() {
     return parseXXXBinaryExpression(
             &Parser::parseEqualExpression, TokenType::OP_AND,
             "AndExpression", "EqualExpression"
         );
 }
 
-template <typename TokenSource>
-std::unique_ptr<Expression> Parser<TokenSource>::parseEqualExpression() {
+std::unique_ptr<Expression> Parser::parseEqualExpression() {
     return parseXXXBinaryExpression(
             &Parser::parseRelExpression,TokenType::OP_EQ,
             "EqualExpression", "RelExpression"
         );
 }
 
-template <typename TokenSource>
-std::unique_ptr<Expression> Parser<TokenSource>::parseRelExpression() {
+std::unique_ptr<Expression> Parser::parseRelExpression() {
     switch (currToken_.type) {
         case TokenType::KEYWORD_TRUE:
             advance();
@@ -307,24 +289,21 @@ std::unique_ptr<Expression> Parser<TokenSource>::parseRelExpression() {
     }
 }
 
-template <typename TokenSource>
-std::unique_ptr<Expression> Parser<TokenSource>::parseAddExpression() {
+std::unique_ptr<Expression> Parser::parseAddExpression() {
     return parseXXXBinaryExpression(
             &Parser::parseMultExpression, TokenType::OP_ADD,
             "AddExpression", "MultExpression"
         );
 }
 
-template <typename TokenSource>
-std::unique_ptr<Expression> Parser<TokenSource>::parseMultExpression() {
+std::unique_ptr<Expression> Parser::parseMultExpression() {
     return parseXXXBinaryExpression(
             &Parser::parseExpressionElement, TokenType::OP_MULT,
             "MultExpression", "ExpressionElement"
         );
 }
 
-template <typename TokenSource>
-std::unique_ptr<Expression> Parser<TokenSource>::parseExpressionElement() {
+std::unique_ptr<Expression> Parser::parseExpressionElement() {
     std::unique_ptr<Expression> element = nullptr;
 
     switch (currToken_.type) {
@@ -360,8 +339,7 @@ std::unique_ptr<Expression> Parser<TokenSource>::parseExpressionElement() {
     return element;
 }
 
-template <typename TokenSource>
-std::unique_ptr<codeobj::String> Parser<TokenSource>::parseString() {
+std::unique_ptr<codeobj::String> Parser::parseString() {
     assert(currToken_.type == TokenType::STRING);
     String strToken = std::get<String>(currToken_.value);
     std::vector<std::unique_ptr<Expression>> parts;
@@ -400,8 +378,7 @@ std::unique_ptr<codeobj::String> Parser<TokenSource>::parseString() {
     return std::make_unique<codeobj::String>(std::move(parts));
 }
 
-template <typename TokenSource>
-codeobj::Unit Parser<TokenSource>::parseUnit() {
+codeobj::Unit Parser::parseUnit() {
     if (currToken_.type != TokenType::SQUARE_OPEN) {
         return codeobj::Unit();
     }
@@ -413,8 +390,7 @@ codeobj::Unit Parser<TokenSource>::parseUnit() {
     return unit;
 }
 
-template <typename TokenSource>
-codeobj::Unit Parser<TokenSource>::parseComplexUnitTokens() {
+codeobj::Unit Parser::parseComplexUnitTokens() {
     codeobj::Unit leftOperand = parseUnitElementTokens();
 
     while (currToken_.type == TokenType::OP_MULT) {
@@ -427,8 +403,7 @@ codeobj::Unit Parser<TokenSource>::parseComplexUnitTokens() {
     return leftOperand;
 }
 
-template <typename TokenSource>
-codeobj::Unit Parser<TokenSource>::parseUnitElementTokens() {
+codeobj::Unit Parser::parseUnitElementTokens() {
     codeobj::Unit element;
     
     switch (currToken_.type) {
@@ -446,8 +421,7 @@ codeobj::Unit Parser<TokenSource>::parseUnitElementTokens() {
     return element;
 }
 
-template <typename TokenSource>
-std::optional<Type> Parser<TokenSource>::parseType() {
+std::optional<Type> Parser::parseType() {
     if (currToken_.type != TokenType::SQUARE_OPEN) {
         return std::nullopt;
     }
@@ -459,8 +433,7 @@ std::optional<Type> Parser<TokenSource>::parseType() {
     return std::move(type);
 }
 
-template <typename TokenSource>
-Type Parser<TokenSource>::parseTypeTokens() {
+Type Parser::parseTypeTokens() {
     switch (currToken_.type) {
         case TokenType::NUMBER:
             if (!std::holds_alternative<int>(currToken_.value) || std::get<int>(currToken_.value) != 1) {
@@ -479,8 +452,7 @@ Type Parser<TokenSource>::parseTypeTokens() {
     }
 }
 
-template <typename TokenSource>
-std::unique_ptr<FuncDef> Parser<TokenSource>::parseFuncDef() {
+std::unique_ptr<FuncDef> Parser::parseFuncDef() {
     if (currToken_.type != TokenType::KEYWORD_FUNC) {
         return nullptr;
     }
@@ -530,8 +502,7 @@ std::unique_ptr<FuncDef> Parser<TokenSource>::parseFuncDef() {
         );
 }
 
-template <typename TokenSource>
-std::optional<Variable> Parser<TokenSource>::parseFuncParameter() {
+std::optional<Variable> Parser::parseFuncParameter() {
     if (currToken_.type != TokenType::ID) {
         return std::nullopt;
     }
@@ -545,5 +516,3 @@ std::optional<Variable> Parser<TokenSource>::parseFuncParameter() {
     
     return Variable(paramName, std::move(*type));
 }
-
-#endif // TKOMSIUNITS_PARSER_HPP_INCLUDED

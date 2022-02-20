@@ -1,7 +1,7 @@
 #ifndef TKOMSIUNITS_PARSER_H_INCLUDED
 #define TKOMSIUNITS_PARSER_H_INCLUDED
 
-#include "lexer/Lexer.h"
+#include "lexer/TokenSource.h"
 #include "codeObjects/Program.h"
 #include "codeObjects/Instruction.h"
 #include "codeObjects/InstructionBlock.h"
@@ -19,10 +19,9 @@
 #include <memory>
 #include <optional>
 
-template <typename TokenSource = Lexer>
 class Parser {
 public:
-    Parser(TokenSource &lexer);
+    Parser(TokenSource &tokenSource);
     
     std::unique_ptr<Program> parse();
 
@@ -66,10 +65,8 @@ private:
     );
 
 private:
-    TokenSource &lexer_;
+    TokenSource &tokenSource_;
     Token currToken_;
 };
-
-#include "Parser.hpp"
 
 #endif // TKOMSIUNITS_PARSER_H_INCLUDED
