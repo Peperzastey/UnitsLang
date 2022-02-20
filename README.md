@@ -1,4 +1,4 @@
-# tkom-SIunits
+# UnitsLang: Dokumentacja
 
 Celem projektu jest implementacja interpretera języka programowania.
 
